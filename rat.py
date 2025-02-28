@@ -34,7 +34,7 @@ def InstallPackages(packages):
         log.info(f"Installing package {package}")
         subprocess.run([PYTHON_CMD, "-m", "pip", "install", package], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
-InstallPackages(packages=["requests", "pycryptodome", "pyautogui", "pyperclip", "discord.py", "pynput", "pyaudio"])
+InstallPackages(packages=["requests", "pycryptodome", "pyautogui", "pyperclip", "discord.py", "pynput", "pyaudio", "discord.py[voice]"])
 
 import pyaudio
 import discord
