@@ -694,15 +694,15 @@ class Client(discord.Client):
             elif message.content.startswith(".cd"):
                 await message.delete()
 
-                command = message.content.split(" ")
+                command = message.content.replace(".cd ", "", 1)
 
                 try:
-                    os.chdir(command[1])
+                    os.chdir(command)
                     cmdDirectory = os.getcwd()
                     embed = discord.Embed(description=f"Current working directory changed to `{os.getcwd()}`", color=discord.Color.green())
                     await message.channel.send(embed=embed)
                 except:
-                    embed = discord.Embed(description=f":no_entry: Unkown directory : `{command[1]}`", color=discord.Color.red())
+                    embed = discord.Embed(description=f":no_entry: Unkown directory : `{command}`", color=discord.Color.red())
                     await message.channel.send(embed=embed)
 
             # _____________________________________________________________________________________________________________________________________________ #
